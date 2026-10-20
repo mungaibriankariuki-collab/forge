@@ -18,3 +18,4 @@
 -keep class org.jcodings.** { *; }
 -dontwarn org.eclipse.jdt.annotation.**
 -dontwarn org.snakeyaml.engine.**
+-dontwarn kotlin.Cloneable$DefaultImpls
