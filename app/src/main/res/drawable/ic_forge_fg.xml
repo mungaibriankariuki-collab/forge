@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Prompt chevron -->
+    <path android:fillColor="#FF7A1A"
+        android:pathData="M32,38 h7 l13,16 l-13,16 h-7 l13,-16 z"/>
+    <!-- Cursor bar -->
+    <path android:fillColor="#FFB347"
+        android:pathData="M56,65 h20 v5 h-20 z"/>
+    <!-- Spark -->
+    <path android:fillColor="#FFD166"
+        android:pathData="M70,34 l2,6 l6,2 l-6,2 l-2,6 l-2,-6 l-6,-2 l6,-2 z"/>
+</vector>
