@@ -36,11 +36,11 @@ public class TermuxWidgetAppSharedPreferences extends AppSharedPreferences {
      */
     @Nullable
     public static TermuxWidgetAppSharedPreferences build(@NonNull final Context context) {
-        Context termuxWidgetPackageContext = PackageUtils.getContextForPackage(context, TermuxConstants.TERMUX_WIDGET_PACKAGE_NAME);
-        if (termuxWidgetPackageContext == null)
-            return null;
-        else
-            return new TermuxWidgetAppSharedPreferences(termuxWidgetPackageContext);
+        Context termuxWidgetPackageContext = TermuxConstants.TERMUX_WIDGET_PACKAGE_NAME.equals(context.getPackageName()) ? context :
+            PackageUtils.getContextForPackage(context, TermuxConstants.TERMUX_WIDGET_PACKAGE_NAME);
+        // Forge: Termux:Widget is bundled into the main app, so fall back to the app's own context.
+        if (termuxWidgetPackageContext == null) termuxWidgetPackageContext = context.getApplicationContext();
+        return new TermuxWidgetAppSharedPreferences(termuxWidgetPackageContext);
     }
 
     /**
@@ -53,11 +53,8 @@ public class TermuxWidgetAppSharedPreferences extends AppSharedPreferences {
      * @return Returns the {@link TermuxWidgetAppSharedPreferences}. This will {@code null} if an exception is raised.
      */
     public static TermuxWidgetAppSharedPreferences build(@NonNull final Context context, final boolean exitAppOnError) {
-        Context termuxWidgetPackageContext = TermuxUtils.getContextForPackageOrExitApp(context, TermuxConstants.TERMUX_WIDGET_PACKAGE_NAME, exitAppOnError);
-        if (termuxWidgetPackageContext == null)
-            return null;
-        else
-            return new TermuxWidgetAppSharedPreferences(termuxWidgetPackageContext);
+        // Forge: Termux:Widget is bundled into the main app, so its preferences live in the app itself.
+        return build(context);
     }
 
 

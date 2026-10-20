@@ -1,1 +1,1 @@
-include ':app', ':termux-shared', ':terminal-emulator', ':terminal-view', ':forge-api'
+include ':app', ':termux-shared', ':terminal-emulator', ':terminal-view', ':forge-api', ':forge-widget'

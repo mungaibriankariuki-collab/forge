@@ -180,6 +180,18 @@
             android:name=".app.TermuxOpenReceiver"
             android:exported="false" />
 
+        <!-- Forge: built-in Termux:Styling and Termux:Boot. -->
+        <activity
+            android:name=".forge.StyleActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
+
+        <service
+            android:name=".forge.BootScripts$Job"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <receiver
             android:name=".app.event.SystemEventReceiver"
             android:exported="false">

@@ -39,6 +39,7 @@ android {
         implementation project(":terminal-view")
         implementation project(":termux-shared")
         implementation project(":forge-api")
+        implementation project(":forge-widget")
     }
 
     defaultConfig {

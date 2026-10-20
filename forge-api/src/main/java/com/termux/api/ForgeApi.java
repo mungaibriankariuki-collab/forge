@@ -1,5 +1,6 @@
 package com.termux.api;
 
+import android.app.Application;
 import android.content.Context;
 
 import com.termux.api.util.ResultReturner;
@@ -28,7 +29,7 @@ public final class ForgeApi {
     private ForgeApi() {}
 
     /** Called from the application's onCreate. */
-    public static void init(Context context) {
+    public static void init(Application context) {
         ResultReturner.setContext(context);
         SocketListener.createSocketListener(context);
         new Thread(() -> fixupPackages(), "forge-api-fixup").start();

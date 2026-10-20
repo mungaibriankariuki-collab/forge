@@ -73,7 +73,7 @@ public class TermuxApplication extends Application {
         }
 
         // Forge: start the bundled Termux:API.
-        com.termux.api.ForgeApi.init(context);
+        com.termux.api.ForgeApi.init(this);
     }
 
     public static void setLogConfig(Context context) {

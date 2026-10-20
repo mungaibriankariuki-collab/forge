@@ -53,6 +53,8 @@ public class SystemEventReceiver extends BroadcastReceiver {
 
     public synchronized void onActionBootCompleted(@NonNull Context context, @NonNull Intent intent) {
         TermuxShellManager.onActionBootCompleted(context, intent);
+        // Forge: run ~/.termux/boot scripts (built-in Termux:Boot).
+        com.termux.forge.BootScripts.onBootCompleted(context);
     }
 
     public synchronized void onActionPackageUpdated(@NonNull Context context, @NonNull Intent intent) {
