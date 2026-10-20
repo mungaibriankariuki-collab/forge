@@ -141,7 +141,7 @@ public class AppearanceActivity extends Activity {
         LinearLayout row = card(LinearLayout.HORIZONTAL);
         String current = ForgeSettings.getProperty(TermuxPropertyConstants.KEY_TERMINAL_CURSOR_STYLE);
         if (current == null) current = "block";
-        String[][] styles = {{"block", "Block"}, {"underline", "Underline"}, {"bar", "Bar"}};
+        String[][] styles = {{"block", "Block"}, {"underline", "Line"}, {"bar", "Bar"}};
         TextView[] pills = new TextView[styles.length];
         for (int i = 0; i < styles.length; i++) {
             final String value = styles[i][0];

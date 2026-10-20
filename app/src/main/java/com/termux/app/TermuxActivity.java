@@ -319,10 +319,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermuxTerminalViewClient.onResume();
 
         // Forge: apply changes made in the Appearance screen while the terminal was hidden.
+        // Recreating is needed for the extra keys layout and full screen; sessions are kept.
         if (com.termux.forge.ForgeSettings.consumeStyleChanged(this)) {
-            reloadActivityStyling(false);
-            if (mTerminalView != null && mPreferences != null) mTerminalView.setTextSize(mPreferences.getFontSize());
-            refreshSessionTabs();
+            reloadActivityStyling(true);
+            return;
         }
 
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
@@ -526,6 +526,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             int[] colors = session.getEmulator().mColors.mCurrentColors;
             mSessionTabs.setColors(colors[com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND],
                 colors[com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND]);
+            // Match the extra keys bar to the terminal background instead of plain black.
+            ViewPager toolbar = getTerminalToolbarViewPager();
+            if (toolbar != null) toolbar.setBackgroundColor(colors[com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND]);
         } else {
             mSessionTabs.refresh();
         }
