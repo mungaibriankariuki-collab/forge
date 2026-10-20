@@ -48,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion project.properties.minSdkVersion.toInteger()
+        minSdkVersion 24 // Forge: the apt-android-7 bootstrap and Sora Editor (23+) need Android 7+
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
         versionCode ((System.getenv("FORGE_VERSION_CODE") ?: "1100") as int)
         versionName "1.0.0"
