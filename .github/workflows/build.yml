@@ -41,4 +41,36 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG=v1.0.${{ github.run_number }}
-          gh release create "$TAG" --title "Forge $TAG" --notes "Automatic build of ${GITHUB_SHA:0:7}"             app/build/outputs/apk/release/*arm64-v8a.apk app/build/outputs/apk/release/*universal.apk
+          gh release create "$TAG" --title "Forge $TAG" --notes "Automatic build of ${GITHUB_SHA:0:7}"             app/build/outputs/apk/release/*arm64-v8a.apk app/build/outputs/apk/release/*x86_64.apk             app/build/outputs/apk/release/*universal.apk
+
+  emulator-check:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download APK
+        run: gh release download "v1.0.${{ github.run_number }}" -R "${{ github.repository }}" -p "*x86_64.apk"
+
+      - name: Run smoke test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash .github/scripts/emulator-check.sh
+
+      - name: Attach screenshots to the release
+        if: always()
+        run: |
+          ls -la shots || exit 0
+          gh release upload "v1.0.${{ github.run_number }}" shots/*.png shots/*.txt -R "${{ github.repository }}" --clobber
