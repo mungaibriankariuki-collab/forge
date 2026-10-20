@@ -35,6 +35,7 @@ public class SessionTabsView extends LinearLayout {
     private final HorizontalScrollView mScroll;
     private final LinearLayout mTabs;
     private final TextView mNewButton;
+    private final TextView mCodeButton;
     private final TextView mStyleButton;
     private final TextView mMenuButton;
 
@@ -58,9 +59,12 @@ public class SessionTabsView extends LinearLayout {
         addView(mScroll, new LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
 
         mNewButton = makeIconButton("+", "New session");
+        mCodeButton = makeIconButton("</>", "Code editor");
+        mCodeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         mStyleButton = makeIconButton("◐", "Appearance"); // ◐
         mMenuButton = makeIconButton("☰", "Sessions and settings"); // ☰
         addView(mNewButton);
+        addView(mCodeButton);
         addView(mStyleButton);
         addView(mMenuButton);
     }
@@ -74,6 +78,13 @@ public class SessionTabsView extends LinearLayout {
             return true;
         });
         mStyleButton.setOnClickListener(v -> mActivity.startActivity(new Intent(mActivity, AppearanceActivity.class)));
+        // Open the editor in the current session's folder when it is inside home, else the last project.
+        mCodeButton.setOnClickListener(v -> {
+            TerminalSession session = mActivity.getCurrentSession();
+            String cwd = session == null ? null : session.getCwd();
+            String home = com.termux.shared.termux.TermuxConstants.TERMUX_HOME_DIR_PATH;
+            EditorActivity.open(mActivity, cwd != null && cwd.startsWith(home) && !cwd.equals(home) ? cwd : null);
+        });
         mMenuButton.setOnClickListener(v -> mActivity.getDrawer().openDrawer(GravityCompat.START));
         refresh();
     }
@@ -87,7 +98,7 @@ public class SessionTabsView extends LinearLayout {
 
     public void refresh() {
         setBackgroundColor(ForgeColors.blend(mBackground, ForgeColors.isDark(mBackground) ? Color.WHITE : Color.BLACK, 0.07f));
-        for (TextView button : new TextView[]{mNewButton, mStyleButton, mMenuButton})
+        for (TextView button : new TextView[]{mNewButton, mCodeButton, mStyleButton, mMenuButton})
             button.setTextColor(ForgeColors.withAlpha(mForeground, 0.85f));
 
         mTabs.removeAllViews();

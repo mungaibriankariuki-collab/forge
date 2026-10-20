@@ -40,6 +40,36 @@ public final class ForgeSettings {
         prefs(context).edit().putBoolean(KEY_SHOW_TABS, show).apply();
     }
 
+    // ---- Code editor ----
+
+    public static String editorRoot(Context context) {
+        return prefs(context).getString("editor_root", TermuxConstants.TERMUX_HOME_DIR_PATH);
+    }
+
+    public static void setEditorRoot(Context context, String path) {
+        prefs(context).edit().putString("editor_root", path).apply();
+    }
+
+    /** Custom run command for a project folder, or null to run the open file. */
+    public static String runCommand(Context context, String root) {
+        return prefs(context).getString("run_command:" + root, null);
+    }
+
+    public static void setRunCommand(Context context, String root, String command) {
+        SharedPreferences.Editor editor = prefs(context).edit();
+        if (command == null || command.trim().isEmpty()) editor.remove("run_command:" + root);
+        else editor.putString("run_command:" + root, command.trim());
+        editor.apply();
+    }
+
+    public static boolean getFlag(Context context, String key, boolean fallback) {
+        return prefs(context).getBoolean(key, fallback);
+    }
+
+    public static void setFlag(Context context, String key, boolean value) {
+        prefs(context).edit().putBoolean(key, value).apply();
+    }
+
     /** Returns true the first time it is called, so the welcome setup is shown only once. */
     public static boolean consumeFirstRunSetup(Context context) {
         SharedPreferences prefs = prefs(context);

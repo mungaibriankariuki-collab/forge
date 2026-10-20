@@ -74,6 +74,25 @@ adb shell input keyevent 4
 sleep 4
 shot 7-terminal-after-changes
 
+# Code editor: open a new file with the `code` command, type a program, run it.
+type_line "code hello.py"
+sleep 6
+adb shell input text "'print(2+3)'"
+adb shell input keyevent 66
+adb shell input text "'print(sum(range(10)))'"
+sleep 2
+shot 8-editor
+tap_ui "Files"
+sleep 2
+shot 8b-editor-files
+adb shell input keyevent 4
+sleep 1
+tap_ui "Run"
+sleep 12
+shot 9-editor-run
+adb shell input keyevent 66
+sleep 3
+
 adb logcat -d -b crash > shots/crash.txt
 echo "(end of crash log)" >> shots/crash.txt
 adb logcat -d | grep -iE "forge|termux|AndroidRuntime" | tail -400 > shots/logcat.txt

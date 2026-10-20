@@ -10,3 +10,11 @@
 -dontobfuscate
 #-renamesourcefileattribute SourceFile
 #-keepattributes SourceFile,LineNumberTable
+
+# Forge Code: Sora Editor, TextMate (tm4e), and the regex engine it uses load classes and data reflectively.
+-keep class io.github.rosemoe.sora.** { *; }
+-keep class org.eclipse.tm4e.** { *; }
+-keep class org.joni.** { *; }
+-keep class org.jcodings.** { *; }
+-dontwarn org.eclipse.jdt.annotation.**
+-dontwarn org.snakeyaml.engine.**
