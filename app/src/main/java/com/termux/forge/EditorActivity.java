@@ -195,7 +195,7 @@ public class EditorActivity extends Activity {
         main.addView(top, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)));
 
         android.widget.FrameLayout editorFrame = new android.widget.FrameLayout(this);
-        mEditor = new CodeEditor(this);
+        mEditor = new ForgeCodeEditor(this);
         mEditor.setColorScheme(TextMateColorScheme.create(ThemeRegistry.getInstance()));
         mEditor.setTypefaceText(codeTypeface());
         mEditor.setTextSize(14);

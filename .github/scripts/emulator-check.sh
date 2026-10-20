@@ -87,8 +87,8 @@ shot 8-editor
 tap_ui "Files"
 sleep 2
 shot 8b-editor-files
-adb shell input keyevent 4
-sleep 1
+tap_ui "   hello.py"
+sleep 2
 tap_ui "Run"
 sleep 12
 shot 9-editor-run
