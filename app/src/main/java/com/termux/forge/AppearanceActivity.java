@@ -141,12 +141,12 @@ public class AppearanceActivity extends Activity {
         LinearLayout row = card(LinearLayout.HORIZONTAL);
         String current = ForgeSettings.getProperty(TermuxPropertyConstants.KEY_TERMINAL_CURSOR_STYLE);
         if (current == null) current = "block";
-        String[][] styles = {{"block", "█ Block"}, {"underline", "▁ Line"}, {"bar", "▏ Bar"}};
+        String[][] styles = {{"block", "Block"}, {"underline", "Underline"}, {"bar", "Bar"}};
         TextView[] pills = new TextView[styles.length];
         for (int i = 0; i < styles.length; i++) {
             final String value = styles[i][0];
             pills[i] = pill(styles[i][1]);
-            row.addView(pills[i], new LinearLayout.LayoutParams(0, dp(40), 1f));
+            row.addView(pills[i], new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             pills[i].setOnClickListener(v -> {
                 setProperty(TermuxPropertyConstants.KEY_TERMINAL_CURSOR_STYLE, "block".equals(value) ? null : value);
                 for (int j = 0; j < styles.length; j++) selectPill(pills[j], styles[j][0].equals(value));
@@ -411,7 +411,8 @@ public class AppearanceActivity extends Activity {
     private TextView pill(String label) {
         TextView pill = text(label, 15, TEXT);
         pill.setGravity(Gravity.CENTER);
-        pill.setPadding(dp(16), dp(8), dp(16), dp(8));
+        pill.setPadding(dp(12), dp(9), dp(12), dp(9));
+        pill.setSingleLine(true);
         selectPill(pill, false);
         return pill;
     }
