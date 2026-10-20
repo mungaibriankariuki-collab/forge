@@ -434,6 +434,7 @@ public class EditorActivity extends Activity {
         menu.getMenu().add(0, 8, 7, "Set run command…");
         menu.getMenu().add(0, 9, 8, "Open folder…");
         menu.getMenu().add(0, 10, 9, "Terminal here");
+        menu.getMenu().add(0, 11, 10, "✦ Ask AI about this file");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 1: saveAll(true); break;
@@ -455,10 +456,19 @@ public class EditorActivity extends Activity {
                 case 8: askRunCommand(); break;
                 case 9: askOpenFolder(); break;
                 case 10: openTerminalIn(mCurrent >= 0 ? mOpen.get(mCurrent).file.getParentFile() : mRoot); break;
+                case 11: askAiAboutFile(); break;
             }
             return true;
         });
         menu.show();
+    }
+
+    private void askAiAboutFile() {
+        if (mCurrent < 0) { AiActivity.open(this, null, null, null); return; }
+        OpenFile open = mOpen.get(mCurrent);
+        String text = open.content.toString();
+        if (text.length() > 12000) text = text.substring(0, 12000) + "\n… (file truncated)";
+        AiActivity.open(this, text, open.file.getName(), null);
     }
 
     private void showFileMenu(View anchor, File file) {

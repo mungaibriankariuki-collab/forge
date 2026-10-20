@@ -188,6 +188,13 @@
             android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
 
         <activity
+            android:name=".forge.AiActivity"
+            android:exported="false"
+            android:label="Forge AI"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <activity
             android:name=".forge.EditorActivity"
             android:exported="false"
             android:label="Forge Code"

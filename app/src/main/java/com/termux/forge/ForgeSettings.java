@@ -62,6 +62,14 @@ public final class ForgeSettings {
         editor.apply();
     }
 
+    public static String getString(Context context, String key, String fallback) {
+        return prefs(context).getString(key, fallback);
+    }
+
+    public static void setString(Context context, String key, String value) {
+        prefs(context).edit().putString(key, value).apply();
+    }
+
     public static boolean getFlag(Context context, String key, boolean fallback) {
         return prefs(context).getBoolean(key, fallback);
     }

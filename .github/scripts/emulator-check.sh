@@ -95,6 +95,13 @@ shot 9-editor-run
 adb shell input keyevent 66
 sleep 3
 
+# Forge AI: no API key in CI, so check the key setup screen opens from the tabs bar.
+tap_ui "Forge AI"
+sleep 3
+shot 10-ai-setup
+adb shell input keyevent 4
+sleep 2
+
 adb logcat -d -b crash > shots/crash.txt
 echo "(end of crash log)" >> shots/crash.txt
 adb logcat -d | grep -iE "forge|termux|AndroidRuntime|tm4e|rosemoe|System.err" | tail -400 > shots/logcat.txt

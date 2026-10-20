@@ -839,7 +839,37 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Logger.logVerbose(LOG_TAG, "onActivityResult: requestCode: " + requestCode + ", resultCode: "  + resultCode + ", data: "  + IntentUtils.getIntentString(data));
         if (requestCode == PermissionUtils.REQUEST_GRANT_STORAGE_PERMISSION) {
             requestStoragePermission(true);
+        } else if (requestCode == REQUEST_FORGE_AI && resultCode == RESULT_OK && data != null) {
+            // Forge AI: put the chosen command into the terminal (and press Enter for Run).
+            String command = data.getStringExtra(com.termux.forge.AiActivity.RESULT_COMMAND);
+            TerminalSession session = getCurrentSession();
+            if (command != null && session != null && session.getEmulator() != null) {
+                session.getEmulator().paste(command); // Bracketed paste: multi-line stays unexecuted.
+                if (data.getBooleanExtra(com.termux.forge.AiActivity.RESULT_RUN, false)) session.write("\r");
+            }
         }
+    }
+
+    /** Forge: request code for the AI panel. */
+    private static final int REQUEST_FORGE_AI = 1701;
+
+    /** Forge: open the AI panel with the end of the current terminal as context. */
+    public void openForgeAi() {
+        String transcript = null;
+        TerminalSession session = getCurrentSession();
+        if (session != null && session.getEmulator() != null) {
+            String all = session.getEmulator().getScreen().getTranscriptTextWithoutJoinedLines().trim();
+            String[] lines = all.split("\n");
+            int from = Math.max(0, lines.length - 80);
+            StringBuilder last = new StringBuilder();
+            for (int i = from; i < lines.length; i++) last.append(lines[i]).append('\n');
+            transcript = last.length() > 6000 ? last.substring(last.length() - 6000) : last.toString();
+        }
+        Intent intent = new Intent(this, com.termux.forge.AiActivity.class)
+            .putExtra(com.termux.forge.AiActivity.EXTRA_CONTEXT, transcript)
+            .putExtra(com.termux.forge.AiActivity.EXTRA_CONTEXT_LABEL, "terminal")
+            .putExtra(com.termux.forge.AiActivity.EXTRA_CAN_INSERT, true);
+        startActivityForResult(intent, REQUEST_FORGE_AI);
     }
 
     @Override

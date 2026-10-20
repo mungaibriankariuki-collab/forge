@@ -35,6 +35,7 @@ public class SessionTabsView extends LinearLayout {
     private final HorizontalScrollView mScroll;
     private final LinearLayout mTabs;
     private final TextView mNewButton;
+    private final TextView mAiButton;
     private final TextView mCodeButton;
     private final TextView mStyleButton;
     private final TextView mMenuButton;
@@ -63,7 +64,10 @@ public class SessionTabsView extends LinearLayout {
         mCodeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         mStyleButton = makeIconButton("◐", "Appearance"); // ◐
         mMenuButton = makeIconButton("☰", "Sessions and settings"); // ☰
+        mAiButton = makeIconButton("✦", "Forge AI"); // ✦
+        mAiButton.setTextColor(ForgeColors.ACCENT);
         addView(mNewButton);
+        addView(mAiButton);
         addView(mCodeButton);
         addView(mStyleButton);
         addView(mMenuButton);
@@ -77,6 +81,7 @@ public class SessionTabsView extends LinearLayout {
             mActivity.getTermuxTerminalSessionClient().addNewSession(true, "Failsafe");
             return true;
         });
+        mAiButton.setOnClickListener(v -> mActivity.openForgeAi());
         mStyleButton.setOnClickListener(v -> mActivity.startActivity(new Intent(mActivity, AppearanceActivity.class)));
         // Open the editor in the current session's folder when it is inside home, else the last project.
         mCodeButton.setOnClickListener(v -> {
@@ -199,7 +204,7 @@ public class SessionTabsView extends LinearLayout {
         TypedValue ripple = new TypedValue();
         getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true);
         button.setBackgroundResource(ripple.resourceId);
-        button.setLayoutParams(new LayoutParams(dp(40), LayoutParams.MATCH_PARENT));
+        button.setLayoutParams(new LayoutParams(dp(38), LayoutParams.MATCH_PARENT));
         return button;
     }
 
