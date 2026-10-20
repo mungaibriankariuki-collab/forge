@@ -23,6 +23,15 @@ tap_ui() {
   [ -z "$4" ] && return 1
   adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
 }
+# Tap the first element whose text contains $1 (for menu items that start with an emoji).
+tap_contains() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null
+  adb pull /sdcard/ui.xml shots/ui.xml >/dev/null
+  b=$(grep -o "<node[^>]*text=\"[^\"]*$1[^\"]*\"[^>]*>" shots/ui.xml | grep -o 'bounds="[^"]*"' | head -1 | grep -o '[0-9]\+')
+  set -- $b
+  [ -z "$4" ] && return 1
+  adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
 # Scroll until $1 is visible, then tap it.
 scroll_tap() { for i in $(seq 1 40); do tap_ui "$1" && return 0; scroll_down; done; return 1; }
 
@@ -106,14 +115,14 @@ sleep 2
 tap_ui "Forge menu"
 sleep 2
 shot 11-forge-menu
-tap_ui "🧩 Store (agents &amp; tools)"
+tap_contains "Store (agents"
 sleep 3
 shot 12-store
 adb shell input keyevent 4
 sleep 2
 tap_ui "Forge menu"
 sleep 2
-tap_ui "🕘 Command history"
+tap_contains "Command history"
 sleep 3
 shot 13-history
 adb shell input keyevent 4
