@@ -26,6 +26,14 @@ public final class ForgeApi {
     private static final byte[] OLD_RECEIVER = "com.termux.api/.TermuxApiReceiver".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] NEW_RECEIVER = "com.termux/.api.TermuxApiReceiver".getBytes(StandardCharsets.US_ASCII);
 
+    /**
+     * termux-api package files that may contain {@link #OLD_RECEIVER}, relative to the prefix. The
+     * name lives in libtermux-api.so; libexec/termux-api is a symlink to termux-api-broadcast.
+     */
+    private static final String[] BINARY_PATHS = {
+        "lib/libtermux-api.so", "libexec/termux-api-broadcast", "libexec/termux-api"
+    };
+
     private ForgeApi() {}
 
     /** Called from the application's onCreate. */
@@ -41,7 +49,11 @@ public final class ForgeApi {
         if (!new File(prefix, "bin").isDirectory()) return; // Bootstrap not installed yet.
         try {
             installAptHook(prefix);
-            patchBinary(new File(prefix, "libexec/termux-api"));
+            java.util.Set<File> seen = new java.util.HashSet<>();
+            for (String path : BINARY_PATHS) {
+                File file = new File(prefix, path).getCanonicalFile(); // Follow symlinks.
+                if (seen.add(file)) patchBinary(file);
+            }
             patchScript(new File(prefix, "bin/termux-api-start"));
             patchScript(new File(prefix, "bin/termux-api-stop"));
         } catch (Exception e) {
@@ -55,9 +67,10 @@ public final class ForgeApi {
         File script = new File(prefix, "libexec/forge-api-fixup");
         String body = "#!" + prefix + "/bin/sh\n" +
             "# Written by Forge: point termux-api at the API built into Forge.\n" +
-            "f=" + prefix + "/libexec/termux-api\n" +
-            "[ -f \"$f\" ] && grep -q 'com.termux.api/.TermuxApiReceiver' \"$f\" && " +
+            "for f in " + prefix + "/lib/libtermux-api.so " + prefix + "/libexec/termux-api-broadcast; do\n" +
+            "  [ -f \"$f\" ] && grep -q 'com.termux.api/.TermuxApiReceiver' \"$f\" && " +
             "sed -i 's|com\\.termux\\.api/\\.TermuxApiReceiver|com.termux/.api.TermuxApiReceiver|' \"$f\"\n" +
+            "done\n" +
             "for s in termux-api-start termux-api-stop; do\n" +
             "  f=" + prefix + "/bin/$s\n" +
             "  [ -f \"$f\" ] && sed -i 's|com\\.termux\\.api/\\.KeepAliveService|com.termux/com.termux.api.KeepAliveService|' \"$f\"\n" +
