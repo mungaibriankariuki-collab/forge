@@ -138,6 +138,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      */
     TermuxSessionsListViewController mTermuxSessionListViewController;
 
+    /** Forge: session tabs bar above the terminal. */
+    com.termux.forge.SessionTabsView mSessionTabs;
+
     /**
      * The {@link TermuxActivity} broadcast receiver for various things like terminal style configuration changes.
      */
@@ -315,6 +318,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onResume();
 
+        // Forge: apply changes made in the Appearance screen while the terminal was hidden.
+        if (com.termux.forge.ForgeSettings.consumeStyleChanged(this)) {
+            reloadActivityStyling(false);
+            if (mTerminalView != null && mPreferences != null) mTerminalView.setTextSize(mPreferences.getFontSize());
+            refreshSessionTabs();
+        }
+
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
         TermuxCrashUtils.notifyAppCrashFromCrashLogFile(this, LOG_TAG);
@@ -390,6 +400,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         mTermuxService = ((TermuxService.LocalBinder) service).service;
 
         setTermuxSessionsListView();
+        setSessionTabsView();
 
         final Intent intent = getIntent();
         setIntent(null);
@@ -499,6 +510,27 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTermuxTerminalSessionActivityClient.onCreate();
     }
 
+    private void setSessionTabsView() {
+        mSessionTabs = findViewById(R.id.forge_session_tabs);
+        if (mSessionTabs == null) return;
+        mSessionTabs.setVisibility(com.termux.forge.ForgeSettings.showTabs(this) ? View.VISIBLE : View.GONE);
+        mSessionTabs.attach(this);
+    }
+
+    /** Forge: redraw the tabs bar, using the current session's colours. */
+    public void refreshSessionTabs() {
+        if (mSessionTabs == null) return;
+        mSessionTabs.setVisibility(com.termux.forge.ForgeSettings.showTabs(this) ? View.VISIBLE : View.GONE);
+        TerminalSession session = getCurrentSession();
+        if (session != null && session.getEmulator() != null) {
+            int[] colors = session.getEmulator().mColors.mCurrentColors;
+            mSessionTabs.setColors(colors[com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND],
+                colors[com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND]);
+        } else {
+            mSessionTabs.refresh();
+        }
+    }
+
     private void setTermuxSessionsListView() {
         ListView termuxSessionsListView = findViewById(R.id.terminal_sessions_list);
         mTermuxSessionListViewController = new TermuxSessionsListViewController(this, mTermuxService.getTermuxSessions());
@@ -569,6 +601,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         ImageButton settingsButton = findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(v -> {
             ActivityUtils.startActivity(this, new Intent(this, SettingsActivity.class));
+        });
+
+        View appearanceButton = findViewById(R.id.forge_appearance_button);
+        if (appearanceButton != null) appearanceButton.setOnClickListener(v -> {
+            getDrawer().closeDrawers();
+            startActivity(new Intent(this, com.termux.forge.AppearanceActivity.class));
         });
     }
 
@@ -738,7 +776,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private void showStylingDialog() {
         // Forge: Termux:Styling is built in.
-        startActivity(new Intent(this, com.termux.forge.StyleActivity.class));
+        startActivity(new Intent(this, com.termux.forge.AppearanceActivity.class));
     }
 
     private void toggleKeepScreenOn() {
@@ -850,6 +888,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     public void termuxSessionListNotifyUpdated() {
         mTermuxSessionListViewController.notifyDataSetChanged();
+        refreshSessionTabs();
     }
 
     public boolean isVisible() {

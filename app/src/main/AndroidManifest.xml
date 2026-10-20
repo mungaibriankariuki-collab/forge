@@ -187,6 +187,12 @@
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
 
+        <activity
+            android:name=".forge.AppearanceActivity"
+            android:exported="false"
+            android:label="Appearance"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
         <service
             android:name=".forge.BootScripts$Job"
             android:exported="false"

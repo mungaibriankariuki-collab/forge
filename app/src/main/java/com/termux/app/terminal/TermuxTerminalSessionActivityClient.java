@@ -523,6 +523,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (session != null && session.getEmulator() != null) {
             mActivity.getWindow().getDecorView().setBackgroundColor(session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND]);
         }
+        mActivity.refreshSessionTabs(); // Forge: keep the tabs bar in sync with the session and colours.
     }
 
 }

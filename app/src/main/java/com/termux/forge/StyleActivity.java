@@ -38,6 +38,11 @@ public class StyleActivity extends Activity {
     private static final String LOG_TAG = "ForgeStyle";
     private static final String DEFAULT = "Default";
 
+    /** Optional extra: open straight to one list instead of the Colours/Font chooser. */
+    public static final String EXTRA_MODE = "com.termux.forge.style_mode";
+    public static final String MODE_FONT = "font";
+    public static final String MODE_COLOURS = "colours";
+
     /** termux-styling commit the font files are fetched from. */
     private static final String FONTS_BASE_URL =
         "https://raw.githubusercontent.com/termux/termux-styling/79338cb19f4b86cae4d2e81e6de60ba7f613bb9b/app/src/main/assets/fonts/";
@@ -62,7 +67,10 @@ public class StyleActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        showChooser();
+        String mode = getIntent().getStringExtra(EXTRA_MODE);
+        if (MODE_FONT.equals(mode)) showFonts();
+        else if (MODE_COLOURS.equals(mode)) showColours();
+        else showChooser();
     }
 
     private void showChooser() {
@@ -228,6 +236,7 @@ public class StyleActivity extends Activity {
 
     private void reloadAndFinish(String message) {
         TermuxActivity.updateTermuxActivityStyling(this, false);
+        ForgeSettings.markStyleChanged(this); // In case the terminal is not visible right now.
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         finish();
     }
