@@ -327,6 +327,7 @@ public class EditorActivity extends Activity {
         mSwitching = false;
         mEmpty.setVisibility(View.GONE);
         mEditor.setVisibility(View.VISIBLE);
+        mEditor.requestFocus(); // Typing (and Enter) must go to the editor, not to a toolbar button.
         refreshTabs();
     }
 
@@ -807,6 +808,7 @@ public class EditorActivity extends Activity {
         getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true);
         button.setBackgroundResource(ripple.resourceId);
         button.setLayoutParams(new LinearLayout.LayoutParams(dp(44), dp(44)));
+        button.setFocusable(false); // Keep keyboard focus in the editor.
         button.setOnClickListener(listener);
         return button;
     }

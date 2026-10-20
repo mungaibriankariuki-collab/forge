@@ -34,7 +34,7 @@ shot 1-welcome-setup
 tap_ui "Phone storage"
 sleep 1
 tap_ui "Install 2 kits"
-sleep 300
+sleep 600
 shot 1b-setup-running
 adb shell input keyevent 66
 sleep 4
@@ -77,6 +77,8 @@ shot 7-terminal-after-changes
 # Code editor: open a new file with the `code` command, type a program, run it.
 type_line "code hello.py"
 sleep 6
+adb shell input tap $((W/2)) $((H/3))
+sleep 1
 adb shell input text "'print(2+3)'"
 adb shell input keyevent 66
 adb shell input text "'print(sum(range(10)))'"
@@ -95,5 +97,5 @@ sleep 3
 
 adb logcat -d -b crash > shots/crash.txt
 echo "(end of crash log)" >> shots/crash.txt
-adb logcat -d | grep -iE "forge|termux|AndroidRuntime" | tail -400 > shots/logcat.txt
+adb logcat -d | grep -iE "forge|termux|AndroidRuntime|tm4e|rosemoe|System.err" | tail -400 > shots/logcat.txt
 exit 0
