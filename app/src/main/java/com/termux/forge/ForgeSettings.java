@@ -24,6 +24,7 @@ public final class ForgeSettings {
     private static final String PREFS = "forge";
     private static final String KEY_SHOW_TABS = "show_tabs";
     private static final String KEY_STYLE_CHANGED = "style_changed";
+    private static final String KEY_WELCOME_SHOWN = "welcome_shown";
 
     private ForgeSettings() {}
 
@@ -37,6 +38,14 @@ public final class ForgeSettings {
 
     public static void setShowTabs(Context context, boolean show) {
         prefs(context).edit().putBoolean(KEY_SHOW_TABS, show).apply();
+    }
+
+    /** Returns true the first time it is called, so the welcome setup is shown only once. */
+    public static boolean consumeFirstRunSetup(Context context) {
+        SharedPreferences prefs = prefs(context);
+        if (prefs.getBoolean(KEY_WELCOME_SHOWN, false)) return false;
+        prefs.edit().putBoolean(KEY_WELCOME_SHOWN, true).apply();
+        return true;
     }
 
     /** Marks that the terminal must reload its styling when it is next shown. */

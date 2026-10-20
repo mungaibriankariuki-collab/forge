@@ -188,6 +188,12 @@
             android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
 
         <activity
+            android:name=".forge.SetupActivity"
+            android:exported="false"
+            android:label="Setup"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <activity
             android:name=".forge.AppearanceActivity"
             android:exported="false"
             android:label="Appearance"

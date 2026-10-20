@@ -417,6 +417,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                             launchFailsafe = intent.getExtras().getBoolean(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
                         }
                         mTermuxTerminalSessionActivityClient.addNewSession(launchFailsafe, null);
+                        // Forge: offer the setup kits once, after the first install.
+                        if (!launchFailsafe && com.termux.forge.ForgeSettings.consumeFirstRunSetup(TermuxActivity.this))
+                            com.termux.forge.SetupActivity.open(TermuxActivity.this, true);
                     } catch (WindowManager.BadTokenException e) {
                         // Activity finished - ignore.
                     }
@@ -604,6 +607,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         ImageButton settingsButton = findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(v -> {
             ActivityUtils.startActivity(this, new Intent(this, SettingsActivity.class));
+        });
+
+        View setupButton = findViewById(R.id.forge_setup_button);
+        if (setupButton != null) setupButton.setOnClickListener(v -> {
+            getDrawer().closeDrawers();
+            com.termux.forge.SetupActivity.open(this, false);
         });
 
         View appearanceButton = findViewById(R.id.forge_appearance_button);
