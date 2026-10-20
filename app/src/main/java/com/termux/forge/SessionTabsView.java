@@ -62,7 +62,7 @@ public class SessionTabsView extends LinearLayout {
         mNewButton = makeIconButton("+", "New session");
         mCodeButton = makeIconButton("</>", "Code editor");
         mCodeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        mStyleButton = makeIconButton("◐", "Appearance"); // ◐
+        mStyleButton = makeIconButton("⋯", "Forge menu");
         mMenuButton = makeIconButton("☰", "Sessions and settings"); // ☰
         mAiButton = makeIconButton("✦", "Forge AI"); // ✦
         mAiButton.setTextColor(ForgeColors.ACCENT);
@@ -82,7 +82,7 @@ public class SessionTabsView extends LinearLayout {
             return true;
         });
         mAiButton.setOnClickListener(v -> mActivity.openForgeAi());
-        mStyleButton.setOnClickListener(v -> mActivity.startActivity(new Intent(mActivity, AppearanceActivity.class)));
+        mStyleButton.setOnClickListener(this::showForgeMenu);
         // Open the editor in the current session's folder when it is inside home, else the last project.
         mCodeButton.setOnClickListener(v -> {
             TerminalSession session = mActivity.getCurrentSession();
@@ -92,6 +92,29 @@ public class SessionTabsView extends LinearLayout {
         });
         mMenuButton.setOnClickListener(v -> mActivity.getDrawer().openDrawer(GravityCompat.START));
         refresh();
+    }
+
+    /** The ⋯ menu: everything Forge adds, in one place. */
+    private void showForgeMenu(View anchor) {
+        PopupMenu menu = new PopupMenu(getContext(), anchor);
+        menu.getMenu().add(0, 1, 0, "🕘 Command history");
+        menu.getMenu().add(0, 2, 1, "🤖 AI agent");
+        menu.getMenu().add(0, 3, 2, "💬 AI chats");
+        menu.getMenu().add(0, 4, 3, "🧩 Store (agents & tools)");
+        menu.getMenu().add(0, 5, 4, "⬇ Setup kits");
+        menu.getMenu().add(0, 6, 5, "◐ Appearance");
+        menu.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case 1: mActivity.openCommandHistory(); break;
+                case 2: mActivity.openForgeAgent(); break;
+                case 3: mActivity.startActivity(new Intent(mActivity, AiActivity.class).putExtra(AiActivity.EXTRA_SHOW_HISTORY, true)); break;
+                case 4: mActivity.startActivity(new Intent(mActivity, StoreActivity.class)); break;
+                case 5: SetupActivity.open(mActivity, false); break;
+                case 6: mActivity.startActivity(new Intent(mActivity, AppearanceActivity.class)); break;
+            }
+            return true;
+        });
+        menu.show();
     }
 
     /** Use the terminal's own colours so the bar matches the chosen theme. */

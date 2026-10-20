@@ -850,8 +850,21 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
     }
 
-    /** Forge: request code for the AI panel. */
+    /** Forge: request code for the AI panel and the command history (both return a command). */
     private static final int REQUEST_FORGE_AI = 1701;
+
+    /** Forge: open the command history; the chosen command comes back like an AI command. */
+    public void openCommandHistory() {
+        startActivityForResult(new Intent(this, com.termux.forge.HistoryActivity.class), REQUEST_FORGE_AI);
+    }
+
+    /** Forge: open the AI in agent mode, working in the current session's folder. */
+    public void openForgeAgent() {
+        TerminalSession session = getCurrentSession();
+        startActivity(new Intent(this, com.termux.forge.AiActivity.class)
+            .putExtra(com.termux.forge.AiActivity.EXTRA_MODE, "agent")
+            .putExtra(com.termux.forge.AiActivity.EXTRA_WORKDIR, session != null ? session.getCwd() : null));
+    }
 
     /** Forge: open the AI panel with the end of the current terminal as context. */
     public void openForgeAi() {
@@ -868,7 +881,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = new Intent(this, com.termux.forge.AiActivity.class)
             .putExtra(com.termux.forge.AiActivity.EXTRA_CONTEXT, transcript)
             .putExtra(com.termux.forge.AiActivity.EXTRA_CONTEXT_LABEL, "terminal")
-            .putExtra(com.termux.forge.AiActivity.EXTRA_CAN_INSERT, true);
+            .putExtra(com.termux.forge.AiActivity.EXTRA_CAN_INSERT, true)
+            .putExtra(com.termux.forge.AiActivity.EXTRA_WORKDIR, session != null ? session.getCwd() : null);
         startActivityForResult(intent, REQUEST_FORGE_AI);
     }
 

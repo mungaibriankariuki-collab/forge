@@ -32,6 +32,21 @@ public final class ForgeCommands {
             sh + "# forge-ai: ask Forge AI. Usage: ai how do I unzip a file\n" +
             am + "/com.termux.forge.AiActivity --es " + AiActivity.EXTRA_QUESTION + " \"$*\" --ez " +
             AiActivity.EXTRA_AUTOSEND + " true >/dev/null\n");
+
+        writeCommand(new File(bin, "forge-store"), "# forge-store", Store.cliScript());
+
+        // Save each command to ~/.bash_history as soon as it runs, so the history panel is current.
+        File profileD = new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH, "etc/profile.d");
+        if (profileD.isDirectory() || profileD.mkdirs()) {
+            writeCommand(new File(profileD, "forge-history.sh"), "# forge-history",
+                "# forge-history: save each command right away so Forge's history panel sees it.\n" +
+                "if [ -n \"$BASH_VERSION\" ]; then\n" +
+                "  shopt -s histappend\n" +
+                "  case \";$PROMPT_COMMAND;\" in *\"history -a\"*) ;; *) PROMPT_COMMAND=\"history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}\" ;; esac\n" +
+                "  [ \"${HISTSIZE:-0}\" -lt 5000 ] 2>/dev/null && HISTSIZE=5000\n" +
+                "  [ \"${HISTFILESIZE:-0}\" -lt 10000 ] 2>/dev/null && HISTFILESIZE=10000\n" +
+                "fi\n");
+        }
     }
 
     /** Writes the command unless a file of that name exists that Forge did not write (marker missing). */

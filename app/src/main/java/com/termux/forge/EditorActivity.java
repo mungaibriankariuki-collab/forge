@@ -82,7 +82,8 @@ public class EditorActivity extends Activity {
         final File file;
         final Content content;
         boolean dirty;
-        OpenFile(File file, Content content) { this.file = file; this.content = content; }
+        long modified; // File time when loaded or last saved, to notice changes made outside the editor.
+        OpenFile(File file, Content content) { this.file = file; this.content = content; this.modified = file.lastModified(); }
     }
 
     static final class Node {
@@ -122,10 +123,93 @@ public class EditorActivity extends Activity {
 
         mRoot = new File(ForgeSettings.editorRoot(this));
         if (!mRoot.isDirectory()) mRoot = new File(TermuxConstants.TERMUX_HOME_DIR_PATH);
+        restoreOpenTabs();
         handleIntent(getIntent());
         refreshTree();
         showCurrent();
     }
+
+    // ---- Recent files and restoring tabs ----
+
+    /** Reopens the tabs that were open when the editor was last closed. */
+    private void restoreOpenTabs() {
+        org.json.JSONArray paths = ForgeSettings.getList(this, "editor_open");
+        int current = (int) ForgeSettings.getLong(this, "editor_current", 0);
+        for (int i = 0; i < paths.length(); i++) {
+            File file = new File(paths.optString(i));
+            if (file.isFile()) loadFile(file);
+        }
+        if (!mOpen.isEmpty()) mCurrent = Math.max(0, Math.min(current, mOpen.size() - 1));
+    }
+
+    private void rememberOpenTabs() {
+        org.json.JSONArray paths = new org.json.JSONArray();
+        for (OpenFile open : mOpen) paths.put(open.file.getAbsolutePath());
+        ForgeSettings.setList(this, "editor_open", paths);
+        ForgeSettings.setLong(this, "editor_current", Math.max(mCurrent, 0));
+    }
+
+    private void showRecent() {
+        org.json.JSONArray files = ForgeSettings.getList(this, "editor_recent_files");
+        org.json.JSONArray projects = ForgeSettings.getList(this, "editor_recent_projects");
+        List<String> labels = new ArrayList<>();
+        List<File> targets = new ArrayList<>();
+        for (int i = 0; i < files.length(); i++) {
+            File f = new File(files.optString(i));
+            if (!f.isFile()) continue;
+            labels.add("📄 " + f.getName() + "   " + shortPath(f.getParent()));
+            targets.add(f);
+        }
+        for (int i = 0; i < projects.length(); i++) {
+            File d = new File(projects.optString(i));
+            if (!d.isDirectory()) continue;
+            labels.add("📁 " + shortPath(d.getAbsolutePath()));
+            targets.add(d);
+        }
+        if (labels.isEmpty()) { toast("No recent files yet"); return; }
+        new AlertDialog.Builder(this)
+            .setTitle("Recent files and projects")
+            .setItems(labels.toArray(new String[0]), (d, which) -> {
+                File target = targets.get(which);
+                if (target.isDirectory()) {
+                    setRoot(target);
+                    refreshTree();
+                    mDrawer.openDrawer(GravityCompat.START);
+                } else {
+                    if (!isInside(target, mRoot)) { File parent = target.getParentFile(); if (parent != null) setRoot(parent); refreshTree(); }
+                    openFile(target);
+                }
+            })
+            .show();
+    }
+
+    private static String shortPath(String path) {
+        String home = TermuxConstants.TERMUX_HOME_DIR_PATH;
+        if (path == null) return "";
+        return path.startsWith(home) ? "~" + path.substring(home.length()) : path;
+    }
+
+    /** Called by the git panel after it restores files, so open tabs show the restored content. */
+    void reloadOpenFilesFromDisk() {
+        for (int i = mOpen.size() - 1; i >= 0; i--) {
+            File file = mOpen.get(i).file;
+            if (!file.isFile()) { mOpen.remove(i); continue; }
+            try {
+                mOpen.set(i, new OpenFile(file, new Content(new String(readFile(file), StandardCharsets.UTF_8))));
+            } catch (IOException e) {
+                mOpen.remove(i);
+            }
+        }
+        mCurrent = Math.min(mCurrent, mOpen.size() - 1);
+        showCurrent();
+        refreshTree();
+    }
+
+    File getProjectRoot() { return mRoot; }
+
+    File getCurrentFile() { return mCurrent >= 0 && mCurrent < mOpen.size() ? mOpen.get(mCurrent).file : null; }
+
+    void saveAllFiles() { saveAll(false); }
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -135,9 +219,28 @@ public class EditorActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // Pick up changes made outside the editor (terminal, git restore, the AI agent) to unedited tabs.
+        boolean changed = false;
+        for (int i = 0; i < mOpen.size(); i++) {
+            OpenFile open = mOpen.get(i);
+            if (open.dirty || !open.file.isFile() || open.file.lastModified() == open.modified) continue;
+            try {
+                mOpen.set(i, new OpenFile(open.file, new Content(new String(readFile(open.file), StandardCharsets.UTF_8))));
+                changed = true;
+            } catch (IOException ignored) {
+            }
+        }
+        if (changed) showCurrent();
+        refreshTree();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         saveAll(false);
+        rememberOpenTabs();
     }
 
     @Override
@@ -294,15 +397,24 @@ public class EditorActivity extends Activity {
         for (int i = 0; i < mOpen.size(); i++) {
             if (mOpen.get(i).file.equals(file)) { switchTo(i); return; }
         }
+        if (loadFile(file)) {
+            ForgeSettings.pushRecent(this, "editor_recent_files", file.getAbsolutePath(), 20);
+            switchTo(mOpen.size() - 1);
+        }
+    }
+
+    /** Reads a file into a new (background) tab. Returns false and explains if it cannot be opened. */
+    private boolean loadFile(File file) {
         try {
             if (file.length() > MAX_FILE_SIZE) throw new IOException("File is larger than 4 MB");
             byte[] bytes = readFile(file);
             for (int i = 0; i < Math.min(bytes.length, 8192); i++)
                 if (bytes[i] == 0) throw new IOException("This looks like a binary file");
             mOpen.add(new OpenFile(file, new Content(new String(bytes, StandardCharsets.UTF_8))));
-            switchTo(mOpen.size() - 1);
+            return true;
         } catch (IOException e) {
             toast("Cannot open " + file.getName() + ": " + e.getMessage());
+            return false;
         }
     }
 
@@ -383,6 +495,7 @@ public class EditorActivity extends Activity {
         try (FileOutputStream out = new FileOutputStream(open.file)) {
             out.write(open.content.toString().getBytes(StandardCharsets.UTF_8));
             open.dirty = false;
+            open.modified = open.file.lastModified();
             if (announce) toast("Saved " + open.file.getName());
         } catch (IOException e) {
             Logger.logStackTraceWithMessage(LOG_TAG, "Failed to save " + open.file, e);
@@ -435,6 +548,9 @@ public class EditorActivity extends Activity {
         menu.getMenu().add(0, 9, 8, "Open folder…");
         menu.getMenu().add(0, 10, 9, "Terminal here");
         menu.getMenu().add(0, 11, 10, "✦ Ask AI about this file");
+        menu.getMenu().add(0, 12, 11, "🤖 Agent: do a task in this project");
+        menu.getMenu().add(0, 13, 1, "Recent files…");
+        menu.getMenu().add(0, 14, 2, "Version history (git)…");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 1: saveAll(true); break;
@@ -457,6 +573,15 @@ public class EditorActivity extends Activity {
                 case 9: askOpenFolder(); break;
                 case 10: openTerminalIn(mCurrent >= 0 ? mOpen.get(mCurrent).file.getParentFile() : mRoot); break;
                 case 11: askAiAboutFile(); break;
+                case 12: {
+                    saveAll(false);
+                    startActivity(new Intent(this, AiActivity.class)
+                        .putExtra(AiActivity.EXTRA_MODE, "agent")
+                        .putExtra(AiActivity.EXTRA_WORKDIR, mRoot.getAbsolutePath()));
+                    break;
+                }
+                case 13: showRecent(); break;
+                case 14: new GitPanel(this).show(); break;
             }
             return true;
         });
@@ -650,6 +775,7 @@ public class EditorActivity extends Activity {
     private void setRoot(File root) {
         mRoot = root;
         ForgeSettings.setEditorRoot(this, root.getAbsolutePath());
+        ForgeSettings.pushRecent(this, "editor_recent_projects", root.getAbsolutePath(), 10);
     }
 
     private void refreshTree() {

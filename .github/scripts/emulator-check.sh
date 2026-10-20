@@ -102,6 +102,23 @@ shot 10-ai-setup
 adb shell input keyevent 4
 sleep 2
 
+# Forge menu, Store and command history.
+tap_ui "Forge menu"
+sleep 2
+shot 11-forge-menu
+tap_ui "🧩 Store (agents &amp; tools)"
+sleep 3
+shot 12-store
+adb shell input keyevent 4
+sleep 2
+tap_ui "Forge menu"
+sleep 2
+tap_ui "🕘 Command history"
+sleep 3
+shot 13-history
+adb shell input keyevent 4
+sleep 2
+
 adb logcat -d -b crash > shots/crash.txt
 echo "(end of crash log)" >> shots/crash.txt
 adb logcat -d | grep -iE "forge|termux|AndroidRuntime|tm4e|rosemoe|System.err" | tail -400 > shots/logcat.txt

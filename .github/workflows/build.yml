@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      store_test:
+        description: Also install every AI agent from the Store on the emulator and report which work
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -74,3 +79,38 @@ jobs:
         run: |
           ls -la shots || exit 0
           gh release upload "v1.0.${{ github.run_number }}" shots/*.png shots/*.txt -R "${{ github.repository }}" --clobber
+
+  store-check:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.store_test
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download APK
+        run: gh release download "v1.0.${{ github.run_number }}" -R "${{ github.repository }}" -p "*x86_64.apk"
+
+      - name: Install every AI agent on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          disk-size: 8G
+          script: bash .github/scripts/store-check.sh
+
+      - name: Attach the report to the release
+        if: always()
+        run: |
+          ls -la shots || exit 0
+          gh release upload "v1.0.${{ github.run_number }}" shots/store-*.png shots/crash.txt -R "${{ github.repository }}" --clobber

@@ -70,6 +70,36 @@ public final class ForgeSettings {
         prefs(context).edit().putString(key, value).apply();
     }
 
+    public static long getLong(Context context, String key, long fallback) {
+        return prefs(context).getLong(key, fallback);
+    }
+
+    public static void setLong(Context context, String key, long value) {
+        prefs(context).edit().putLong(key, value).apply();
+    }
+
+    /** A list of strings stored as a JSON array. */
+    public static org.json.JSONArray getList(Context context, String key) {
+        try {
+            return new org.json.JSONArray(prefs(context).getString(key, "[]"));
+        } catch (org.json.JSONException e) {
+            return new org.json.JSONArray();
+        }
+    }
+
+    public static void setList(Context context, String key, org.json.JSONArray list) {
+        prefs(context).edit().putString(key, list.toString()).apply();
+    }
+
+    /** Moves {@code value} to the front of the list, keeping at most {@code max} entries. */
+    public static void pushRecent(Context context, String key, String value, int max) {
+        org.json.JSONArray old = getList(context, key);
+        org.json.JSONArray list = new org.json.JSONArray().put(value);
+        for (int i = 0; i < old.length() && list.length() < max; i++)
+            if (!value.equals(old.optString(i))) list.put(old.optString(i));
+        setList(context, key, list);
+    }
+
     public static boolean getFlag(Context context, String key, boolean fallback) {
         return prefs(context).getBoolean(key, fallback);
     }

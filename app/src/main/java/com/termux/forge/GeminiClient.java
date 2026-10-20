@@ -64,6 +64,41 @@ public final class GeminiClient {
         }
     }
 
+    /**
+     * Sends raw Gemini {@code contents} (with optional function {@code tools}) and returns the
+     * model's reply content object as-is (role "model", parts with text and/or functionCall),
+     * so it can be appended to the conversation unchanged. Blocking: call off the main thread.
+     */
+    public static JSONObject generateRaw(String key, String model, String systemPrompt, JSONArray contents,
+                                         JSONArray functionDeclarations) throws IOException {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("system_instruction", new JSONObject().put("parts", new JSONArray().put(new JSONObject().put("text", systemPrompt))));
+            body.put("contents", contents);
+            if (functionDeclarations != null) {
+                body.put("tools", new JSONArray().put(new JSONObject().put("functionDeclarations", functionDeclarations)));
+            }
+            body.put("generationConfig", new JSONObject().put("temperature", 0.3).put("maxOutputTokens", 4096));
+
+            JSONObject response = request("POST", "models/" + encode(model) + ":generateContent", key, body.toString());
+            JSONArray candidates = response.optJSONArray("candidates");
+            if (candidates == null || candidates.length() == 0) {
+                JSONObject feedback = response.optJSONObject("promptFeedback");
+                String reason = feedback == null ? null : feedback.optString("blockReason", null);
+                throw new GeminiException(200, reason != null ? "Gemini blocked this request (" + reason + ")." : "Gemini returned no answer.");
+            }
+            JSONObject content = candidates.getJSONObject(0).optJSONObject("content");
+            if (content == null || content.optJSONArray("parts") == null || content.getJSONArray("parts").length() == 0) {
+                String finish = candidates.getJSONObject(0).optString("finishReason", "");
+                throw new GeminiException(200, "Gemini returned an empty answer" + (finish.isEmpty() ? "." : " (" + finish + ")."));
+            }
+            if (!content.has("role")) content.put("role", "model");
+            return content;
+        } catch (JSONException e) {
+            throw new IOException("Unexpected reply from Gemini: " + e.getMessage(), e);
+        }
+    }
+
     /** Model names (without "models/") that support generateContent, newest-looking first. */
     public static List<String> listModels(String key) throws IOException {
         List<String> names = new ArrayList<>();
