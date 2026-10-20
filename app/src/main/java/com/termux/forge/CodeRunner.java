@@ -50,8 +50,11 @@ public final class CodeRunner {
 
     /** Script for the run tab: shows the command, runs it, shows the exit code and waits. */
     public static String script(String command) {
+        // Show only the real command, not the "is the tool installed" guard in front of it.
+        int guardEnd = command.startsWith("command -v ") ? command.indexOf("} && ") : -1;
+        String shown = guardEnd >= 0 ? command.substring(guardEnd + "} && ".length()) : command;
         return "clear\n" +
-            "printf '\\033[1;38;5;208m▶ %s\\033[0m\\n\\n' " + quote(command) + "\n" +
+            "printf '\\033[1;38;5;208m▶ %s\\033[0m\\n\\n' " + quote(shown) + "\n" +
             "( " + command + " )\n" +
             "code=$?\n" +
             "printf '\\n\\033[2m[exit code %s - press Enter to close]\\033[0m' \"$code\"\n" +
