@@ -34,11 +34,11 @@ public class TermuxAPIAppSharedPreferences extends AppSharedPreferences {
      */
     @Nullable
     public static TermuxAPIAppSharedPreferences build(@NonNull final Context context) {
-        Context termuxAPIPackageContext = PackageUtils.getContextForPackage(context, TermuxConstants.TERMUX_API_PACKAGE_NAME);
-        if (termuxAPIPackageContext == null)
-            return null;
-        else
-            return new TermuxAPIAppSharedPreferences(termuxAPIPackageContext);
+        Context termuxAPIPackageContext = TermuxConstants.TERMUX_API_PACKAGE_NAME.equals(context.getPackageName()) ? context :
+            PackageUtils.getContextForPackage(context, TermuxConstants.TERMUX_API_PACKAGE_NAME);
+        // Forge: Termux:API is bundled into the main app, so fall back to the app's own context.
+        if (termuxAPIPackageContext == null) termuxAPIPackageContext = context.getApplicationContext();
+        return new TermuxAPIAppSharedPreferences(termuxAPIPackageContext);
     }
 
     /**
@@ -51,11 +51,8 @@ public class TermuxAPIAppSharedPreferences extends AppSharedPreferences {
      * @return Returns the {@link TermuxAPIAppSharedPreferences}. This will {@code null} if an exception is raised.
      */
     public static TermuxAPIAppSharedPreferences build(@NonNull final Context context, final boolean exitAppOnError) {
-        Context termuxAPIPackageContext = TermuxUtils.getContextForPackageOrExitApp(context, TermuxConstants.TERMUX_API_PACKAGE_NAME, exitAppOnError);
-        if (termuxAPIPackageContext == null)
-            return null;
-        else
-            return new TermuxAPIAppSharedPreferences(termuxAPIPackageContext);
+        // Forge: Termux:API is bundled into the main app, so its preferences live in the app itself.
+        return build(context);
     }
 
 

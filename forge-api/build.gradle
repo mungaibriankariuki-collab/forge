@@ -1,0 +1,39 @@
+// Termux:API (https://github.com/termux/termux-api, GPLv3) bundled into Forge as a library module.
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.termux.api"
+    compileSdkVersion project.properties.compileSdkVersion.toInteger()
+
+    defaultConfig {
+        minSdkVersion project.properties.minSdkVersion.toInteger()
+        targetSdkVersion project.properties.targetSdkVersion.toInteger()
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:1.1.5"
+
+    implementation "com.google.android.material:material:1.12.0"
+    implementation "androidx.biometric:biometric:1.2.0-alpha05"
+    implementation "androidx.media:media:1.7.0"
+    implementation "androidx.preference:preference:1.2.1"
+    implementation "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava"
+
+    implementation project(":termux-shared")
+}

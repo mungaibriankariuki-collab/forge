@@ -398,6 +398,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             if (mIsVisible) {
                 TermuxInstaller.setupBootstrapIfNeeded(TermuxActivity.this, () -> {
                     if (mTermuxService == null) return; // Activity might have been destroyed.
+                    // Forge: the bootstrap may have just been installed, so set up the bundled API's apt hook.
+                    new Thread(com.termux.api.ForgeApi::fixupPackages, "forge-api-fixup").start();
                     try {
                         boolean launchFailsafe = false;
                         if (intent != null && intent.getExtras() != null) {

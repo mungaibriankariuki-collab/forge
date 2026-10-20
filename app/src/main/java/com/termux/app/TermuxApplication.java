@@ -71,6 +71,9 @@ public class TermuxApplication extends Application {
         if (isTermuxFilesDirectoryAccessible) {
             TermuxShellEnvironment.writeEnvironmentToFile(this);
         }
+
+        // Forge: start the bundled Termux:API.
+        com.termux.api.ForgeApi.init(context);
     }
 
     public static void setLogConfig(Context context) {
