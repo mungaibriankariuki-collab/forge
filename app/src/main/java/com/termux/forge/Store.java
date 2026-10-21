@@ -204,8 +204,6 @@ public final class Store {
             .note("Runs in the built-in Ubuntu. Needs an Amp account."));
         l.add(ub("aider", "Aider", AI, "AI pair programming in the terminal; works great with git.",
             "pipx install aider-chat\n", "aider").note("Runs in the built-in Ubuntu. Bring your own API key."));
-        l.add(ub("plandex", "Plandex", AI, "AI agent for large, multi-file coding tasks.",
-            "curl -sL https://plandex.ai/install.sh | bash\n", "plandex").note("Runs in the built-in Ubuntu.").verify("plandex version"));
         l.add(ub("openhands", "OpenHands CLI", AI, "Open-source autonomous software-engineer agent.",
             "curl -LsSf https://astral.sh/uv/install.sh | sh\nuv tool install openhands --python 3.12\n", "openhands")
             .note("Runs in the built-in Ubuntu. Big install. Bring your own API key."));
@@ -282,7 +280,7 @@ public final class Store {
         l.add(starter("starter-notebook", "Python data notebook", "Jupyter-style data work: pandas + matplotlib, with an example script.",
             "data-notebook",
             "cat > analysis.py <<'EOF'\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\n\ndf = pd.DataFrame({\"day\": range(1, 8), \"sales\": [5, 8, 6, 10, 12, 9, 14]})\nprint(df.describe())\ndf.plot(x=\"day\", y=\"sales\", title=\"Sales\")\nplt.savefig(\"chart.png\")\nprint(\"Saved chart.png\")\nEOF\n",
-            "pkg install -y python python-pandas matplotlib\n"));
+            "pkg install -y tur-repo\npkg install -y python python-pandas matplotlib\n"));
 
         // Languages
         l.add(pkg("deno", "Deno", LANG, "Modern JavaScript/TypeScript runtime.", "deno", "deno"));
@@ -684,6 +682,8 @@ public final class Store {
         s.append("      v=$(timeout 180 sh -c \"$(verify_cmd \"$i\")\" 2>&1); vrc=$?\n");
         s.append("      if [ $rc = 0 ] && [ $vrc = 0 ] && ! echo \"$v\" | grep -qiE '" + FAILURE_WORDS + "'; then r=PASS; else r=FAIL; fi\n");
         s.append("      line=\"$r $i: $(echo \"$v\" | head -1 | cut -c1-50)\"; [ $rc != 0 ] && line=\"$line (install exit $rc)\"\n");
+        // On failure, show the first real error from the install log right in the report.
+        s.append("      [ $r = FAIL ] && line=\"$line | $(grep -m1 -iE '^E:|error|no space|failed|unable|denied' \"$TMPDIR/forge-store-$i.log\" | cut -c1-80)\"\n");
         s.append("      echo \"$line\" | tee -a \"$report\"\n");
         s.append("      [ $r = FAIL ] && tail -4 \"$TMPDIR/forge-store-$i.log\" | cut -c1-90 | sed 's/^/    /' | tee -a \"$report\"\n");
         s.append("    done\n    step 'Summary'; forge-store report\n");
@@ -691,7 +691,7 @@ public final class Store {
         s.append("    mkdir -p /sdcard/forge-test 2>/dev/null && cp \"$report\" \"$TMPDIR\"/forge-store-*.log /sdcard/forge-test/ 2>/dev/null\n");
         // Tell an automated test that the run is over: the tab title shows in Forge's tabs bar.
         s.append("    printf '\\033]0;store-done\\007' ;;\n");
-        s.append("  report) f=\"$HOME/forge-store-test.txt\"; grep -E '^FAIL' \"$f\" | cut -c1-70; ");
+        s.append("  report) f=\"$HOME/forge-store-test.txt\"; echo \"Free space: $(df -h \"$HOME\" | tail -1 | awk '{print $4}')\"; grep -E '^FAIL' \"$f\" | cut -c1-150; ");
         s.append("echo \"PASS ($(grep -c '^PASS' \"$f\")): $(grep '^PASS' \"$f\" | cut -d' ' -f2 | tr -d ':' | tr '\\n' ' ')\" ;;\n");
         s.append("  *) echo 'Usage: forge-store list | install ID... | remove ID... | test ID... | report' ;;\n");
         s.append("esac\n");
