@@ -58,7 +58,7 @@ public final class Store {
     private static String ubuntuInstall(String name, String insideUbuntu) {
         String prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
         return "pkg install -y proot-distro\n" +
-            "proot-distro list 2>/dev/null | grep -qw ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n" +
+            "pd_has ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n" +
             "proot-distro login ubuntu -- bash -ec '\n" +
             "export DEBIAN_FRONTEND=noninteractive\n" +
             "apt-get update\n" +
@@ -168,13 +168,13 @@ public final class Store {
             "A full Ubuntu system inside Forge (proot, no root needed). Uses apt.",
             "About 100 MB download. Open logs you in as root inside Ubuntu.",
             "$PREFIX/var/lib/proot-distro/containers/ubuntu",
-            "pkg install -y proot-distro\nproot-distro list 2>/dev/null | grep -qw ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n",
+            "pkg install -y proot-distro\npd_has ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n",
             "proot-distro remove ubuntu", "proot-distro login ubuntu"),
         new Item("debian", "Debian", LINUX,
             "A full Debian system inside Forge (proot, no root needed).",
             "About 50 MB download.",
             "$PREFIX/var/lib/proot-distro/containers/debian",
-            "pkg install -y proot-distro\nproot-distro list 2>/dev/null | grep -qw debian || proot-distro install debian:bookworm --name debian\n",
+            "pkg install -y proot-distro\npd_has debian || proot-distro install debian:bookworm --name debian\n",
             "proot-distro remove debian", "proot-distro login debian"),
 
         new Item("yt-dlp", "yt-dlp", MEDIA,
@@ -201,7 +201,10 @@ public final class Store {
     private static final String HELPERS =
         "export DEBIAN_FRONTEND=noninteractive\n" +
         "step() { printf '\\n\\033[1;38;5;208m== %s ==\\033[0m\\n' \"$1\"; }\n" +
-        "forge_cpu() { case \"$(uname -m)\" in aarch64|arm64) echo arm64 ;; x86_64) echo x64 ;; armv7l|armv8l) echo arm ;; *) uname -m ;; esac; }\n";
+        "forge_cpu() { case \"$(uname -m)\" in aarch64|arm64) echo arm64 ;; x86_64) echo x64 ;; armv7l|armv8l) echo arm ;; *) uname -m ;; esac; }\n" +
+        // `proot-distro list` prints its table to stderr; --quiet prints bare names to stdout.
+        "pd_has() { proot-distro list --quiet 2>/dev/null | grep -qx \"$1\" || " +
+        "[ -d \"$PREFIX/var/lib/proot-distro/containers/$1\" ] || [ -d \"$PREFIX/var/lib/proot-distro/installed-rootfs/$1\" ]; }\n";
 
     /** Script for the install tab: installs, checks that the command works, then waits for Enter. */
     public static String installScript(Item item) {
@@ -255,6 +258,8 @@ public final class Store {
         s.append("  install) shift; for i in \"$@\"; do step \"Installing $i\"; install_item \"$i\"; done ;;\n");
         s.append("  remove) shift; for i in \"$@\"; do remove_item \"$i\"; done ;;\n");
         s.append("  test)\n    shift\n    report=\"$HOME/forge-store-test.txt\"; : > \"$report\"\n");
+        // Tests use Termux's main package server instead of a random mirror (mirrors can rate-limit).
+        s.append("    [ -f \"$PREFIX/etc/termux/mirrors/default\" ] && ln -sfn \"$PREFIX/etc/termux/mirrors/default\" \"$PREFIX/etc/termux/chosen_mirrors\"\n");
         s.append("    for i in \"$@\"; do\n");
         s.append("      step \"Testing $i\"\n");
         s.append("      install_item \"$i\" > \"$TMPDIR/forge-store-$i.log\" 2>&1; rc=$?\n");
