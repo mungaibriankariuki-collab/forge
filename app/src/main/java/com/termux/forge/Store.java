@@ -45,18 +45,49 @@ public final class Store {
         }
     }
 
-    /** npm flags that make npm fetch the static Linux (musl) build for this phone's CPU. */
-    private static final String NPM_LINUX = "--os=linux --cpu=\"$(forge_cpu)\" --libc=musl";
-
     private static String node(String pkgs) {
         return "pkg install -y nodejs-lts ripgrep\nnpm install -g " + pkgs + "\n";
+    }
+
+    /**
+     * Some agents only ship glibc Linux builds that do not run on Android directly. They are
+     * installed inside a proot Ubuntu (the same one as the "Ubuntu" store item), and Forge adds a
+     * small $PREFIX/bin/NAME command that runs them there with ~ shared, starting in the matching
+     * folder, so for the user it works like any other command.
+     */
+    private static String ubuntuInstall(String name, String insideUbuntu) {
+        String prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH;
+        return "pkg install -y proot-distro\n" +
+            "proot-distro list 2>/dev/null | grep -qw ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n" +
+            "proot-distro login ubuntu -- bash -ec '\n" +
+            "export DEBIAN_FRONTEND=noninteractive\n" +
+            "apt-get update\n" +
+            "apt-get install -y curl ca-certificates git ripgrep\n" +
+            insideUbuntu.replace("'", "'\\''") +
+            "'\n" +
+            "cat > \"$PREFIX/bin/" + name + "\" <<'FORGE_WRAPPER'\n" +
+            "#!" + prefix + "/bin/bash\n" +
+            "# forge-store wrapper: runs " + name + " inside the built-in Ubuntu.\n" +
+            "# Forge's home folder is visible inside Ubuntu at the same path, so start in the current folder.\n" +
+            "exec proot-distro login ubuntu --shared-tmp --work-dir \"$PWD\" -- " +
+            "env TERM=\"$TERM\" COLORTERM=\"$COLORTERM\" LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 /usr/local/bin/" + name + " \"$@\"\n" +
+            "FORGE_WRAPPER\n" +
+            "chmod 755 \"$PREFIX/bin/" + name + "\"\n";
+    }
+
+    private static String ubuntuRemove(String name) {
+        return "rm -f \"$PREFIX/bin/" + name + "\"\nproot-distro login ubuntu -- rm -f /usr/local/bin/" + name;
     }
 
     public static final Item[] ITEMS = {
         new Item("claude-code", "Claude Code", AI,
             "Anthropic's coding agent in the terminal: edits files, runs commands, explains code.",
-            "Needs a Claude Pro/Max plan or an Anthropic API key. Sign in on first start.",
-            "claude", node("@anthropic-ai/claude-code " + NPM_LINUX), "npm uninstall -g @anthropic-ai/claude-code", "claude"),
+            "Runs inside a built-in Ubuntu 24.04 (installed automatically, ~300 MB). Needs a Claude Pro/Max plan or an Anthropic API key.",
+            "claude",
+            ubuntuInstall("claude",
+                "curl -fsSL https://claude.ai/install.sh | bash\n" +
+                "cp -L /root/.local/bin/claude /usr/local/bin/claude\n"),
+            ubuntuRemove("claude"), "claude"),
         new Item("codex", "OpenAI Codex CLI", AI,
             "OpenAI's coding agent for the terminal (official Termux build).",
             "Needs a ChatGPT plan or an OpenAI API key. Sign in on first start.",
@@ -71,12 +102,22 @@ public final class Store {
             "qwen", node("@qwen-code/qwen-code"), "npm uninstall -g @qwen-code/qwen-code", "qwen"),
         new Item("opencode", "OpenCode", AI,
             "Open-source terminal coding agent that works with many AI providers.",
-            "Experimental on Android. Bring your own API key (Anthropic, OpenAI, Gemini…).",
-            "opencode", node("opencode-ai --force " + NPM_LINUX), "npm uninstall -g opencode-ai", "opencode"),
+            "Runs inside a built-in Ubuntu (installed automatically, ~150 MB). Bring your own API key.",
+            "opencode",
+            ubuntuInstall("opencode",
+                "curl -fsSL https://opencode.ai/install | bash\n" +
+                "cp -L /root/.opencode/bin/opencode /usr/local/bin/opencode\n"),
+            ubuntuRemove("opencode"), "opencode"),
         new Item("copilot-cli", "GitHub Copilot CLI", AI,
             "GitHub's coding agent in the terminal.",
-            "Experimental on Android. Needs a GitHub Copilot subscription.",
-            "copilot", node("@github/copilot " + NPM_LINUX), "npm uninstall -g @github/copilot", "copilot"),
+            "Runs inside a built-in Ubuntu (installed automatically). Needs a GitHub Copilot subscription.",
+            "copilot",
+            ubuntuInstall("copilot",
+                "curl -fsSL https://deb.nodesource.com/setup_22.x | bash -\n" +
+                "apt-get install -y nodejs\n" +
+                "npm install -g @github/copilot\n" +
+                "ln -sf \"$(command -v copilot)\" /usr/local/bin/copilot\n"),
+            ubuntuRemove("copilot"), "copilot"),
         new Item("crush", "Crush", AI,
             "Charm's glamorous terminal coding agent. Built from source with Go (takes a few minutes).",
             "Bring your own API key (Anthropic, OpenAI, Gemini, OpenRouter…).",
@@ -126,14 +167,14 @@ public final class Store {
         new Item("ubuntu", "Ubuntu", LINUX,
             "A full Ubuntu system inside Forge (proot, no root needed). Uses apt.",
             "About 100 MB download. Open logs you in as root inside Ubuntu.",
-            "$PREFIX/var/lib/proot-distro/installed-rootfs/ubuntu",
-            "pkg install -y proot-distro\nproot-distro install ubuntu\n",
+            "$PREFIX/var/lib/proot-distro/containers/ubuntu",
+            "pkg install -y proot-distro\nproot-distro list 2>/dev/null | grep -qw ubuntu || proot-distro install ubuntu:24.04 --name ubuntu\n",
             "proot-distro remove ubuntu", "proot-distro login ubuntu"),
         new Item("debian", "Debian", LINUX,
             "A full Debian system inside Forge (proot, no root needed).",
             "About 50 MB download.",
-            "$PREFIX/var/lib/proot-distro/installed-rootfs/debian",
-            "pkg install -y proot-distro\nproot-distro install debian\n",
+            "$PREFIX/var/lib/proot-distro/containers/debian",
+            "pkg install -y proot-distro\nproot-distro list 2>/dev/null | grep -qw debian || proot-distro install debian:bookworm --name debian\n",
             "proot-distro remove debian", "proot-distro login debian"),
 
         new Item("yt-dlp", "yt-dlp", MEDIA,
@@ -153,6 +194,9 @@ public final class Store {
         for (Item item : ITEMS) if (item.id.equals(id)) return item;
         return null;
     }
+
+    /** Output words that mean a tool did not really start, even if it exited with 0. */
+    private static final String FAILURE_WORDS = "error|not found|cannot|unsupported|exec format|no platform package|not installed|failed";
 
     private static final String HELPERS =
         "export DEBIAN_FRONTEND=noninteractive\n" +
@@ -181,7 +225,8 @@ public final class Store {
     private static String verify(Item item) {
         if (item.check.contains("/")) return "works=0; [ -e \"" + item.check + "\" ] && works=1\n";
         return "works=0; if command -v " + item.check + " >/dev/null 2>&1; then " +
-            "v=$(timeout 60 " + item.check + " --version 2>&1 | head -3) && works=1; echo \"$v\"; fi\n";
+            "v=$(timeout 120 " + item.check + " --version 2>&1); vrc=$?; echo \"$v\" | head -3; " +
+            "[ $vrc = 0 ] && ! echo \"$v\" | grep -qiE '" + FAILURE_WORDS + "' && works=1; fi\n";
     }
 
     /**
@@ -215,8 +260,9 @@ public final class Store {
         s.append("      install_item \"$i\" > \"$TMPDIR/forge-store-$i.log\" 2>&1; rc=$?\n");
         s.append("      c=$(check_cmd \"$i\")\n");
         s.append("      if [ \"${c#*/}\" != \"$c\" ]; then [ -e \"$(eval echo \"$c\")\" ] && v=installed || v=missing\n");
-        s.append("      else v=$(timeout 60 \"$c\" --version 2>&1 | head -1); command -v \"$c\" >/dev/null || v=\"not found\"; fi\n");
-        s.append("      if [ $rc = 0 ] && [ \"$v\" != missing ] && [ \"$v\" != 'not found' ] && ! echo \"$v\" | grep -qiE 'error|not found|cannot|unsupported|exec format'; then r=PASS; else r=FAIL; fi\n");
+        s.append("      else v=$(timeout 120 \"$c\" --version 2>&1); vrc=$?; command -v \"$c\" >/dev/null || { v=\"not found\"; vrc=127; }\n");
+        s.append("        [ $vrc = 0 ] || v=\"exit $vrc: $v\"; v=$(echo \"$v\" | head -1); fi\n");
+        s.append("      if [ $rc = 0 ] && [ \"${v#exit }\" = \"$v\" ] && [ \"$v\" != missing ] && [ \"$v\" != 'not found' ] && ! echo \"$v\" | grep -qiE '" + FAILURE_WORDS + "'; then r=PASS; else r=FAIL; fi\n");
         s.append("      line=\"$r $i: $(echo \"$v\" | cut -c1-60)\"\n");
         s.append("      echo \"$line\" | tee -a \"$report\"\n");
         s.append("      [ $r = FAIL ] && tail -5 \"$TMPDIR/forge-store-$i.log\" | sed 's/^/    /' | tee -a \"$report\"\n");

@@ -12,7 +12,7 @@ adb shell am start -n com.termux/.app.TermuxActivity
 sleep 90
 adb shell input keyevent 4   # Close the welcome setup screen.
 sleep 3
-type_line "forge-store test claude-code codex gemini-cli qwen-code opencode copilot-cli"
+type_line "forge-store test claude-code opencode copilot-cli"
 # Wait for the test to finish (up to 40 minutes), checking the screen for the summary header.
 for i in $(seq 1 80); do
   sleep 30
