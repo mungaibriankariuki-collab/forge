@@ -57,7 +57,7 @@ public class StoreActivity extends Activity {
         TextView title = text("Forge Store", 26, TEXT);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
-        TextView subtitle = text("Coding agents and tools, one tap to install. Each install runs in its own tab so you can watch it.", 14, MUTED);
+        TextView subtitle = text("170+ coding agents, languages, servers and tools. One tap to install; each install runs in its own tab. Items marked Ubuntu run in the built-in Ubuntu.", 14, MUTED);
         subtitle.setPadding(0, dp(4), 0, dp(8));
         root.addView(subtitle);
 
@@ -96,7 +96,11 @@ public class StoreActivity extends Activity {
 
     private void buildCategories() {
         mCategories.removeAllViews();
-        for (String category : new String[]{"All", Store.AI, Store.DEV, Store.LINUX, Store.MEDIA, "Installed"}) {
+        java.util.List<String> categories = new java.util.ArrayList<>();
+        categories.add("All");
+        categories.add("Installed");
+        categories.addAll(Store.categories());
+        for (String category : categories) {
             boolean selected = category.equals(mCategory);
             TextView chip = text(category, 13, selected ? Color.BLACK : TEXT);
             chip.setPadding(dp(12), dp(6), dp(12), dp(6));
@@ -146,6 +150,12 @@ public class StoreActivity extends Activity {
         TextView name = text(item.name, 17, TEXT);
         name.setTypeface(Typeface.DEFAULT_BOLD);
         top.addView(name, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        if (item.ubuntu && !installed) {
+            TextView badge = text("Ubuntu", 11, MUTED);
+            badge.setPadding(dp(8), dp(2), dp(8), dp(2));
+            badge.setBackground(rounded(0xFF2A2C38, 10));
+            top.addView(badge);
+        }
         if (installed) top.addView(text("Installed ✓", 12, GREEN));
         card.addView(top);
 

@@ -34,6 +34,7 @@ public final class ForgeCommands {
             AiActivity.EXTRA_AUTOSEND + " true >/dev/null\n");
 
         writeCommand(new File(bin, "forge-store"), "# forge-store", Store.cliScript());
+        writeCommand(new File(bin, "forge-ubuntu"), "# forge-ubuntu", Store.ubuntuRunner());
 
         // Save each command to ~/.bash_history as soon as it runs, so the history panel is current.
         File profileD = new File(TermuxConstants.TERMUX_PREFIX_DIR_PATH, "etc/profile.d");

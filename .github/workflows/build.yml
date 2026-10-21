@@ -84,7 +84,11 @@ jobs:
     needs: build
     if: github.event_name == 'workflow_dispatch' && inputs.store_test
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 170
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -108,10 +112,10 @@ jobs:
           disable-animations: true
           disk-size: 6144M
           emulator-boot-timeout: 1200
-          script: bash .github/scripts/store-check.sh
+          script: GROUP=${{ matrix.group }} bash .github/scripts/store-check.sh
 
       - name: Attach the report to the release
         if: always()
         run: |
           ls -la shots || exit 0
-          gh release upload "v1.0.${{ github.run_number }}" shots/store-*.png shots/crash.txt -R "${{ github.repository }}" --clobber
+          gh release upload "v1.0.${{ github.run_number }}" shots/store-*.png -R "${{ github.repository }}" --clobber
