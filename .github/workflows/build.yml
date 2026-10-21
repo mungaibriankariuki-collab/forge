@@ -106,7 +106,8 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          disk-size: 8G
+          disk-size: 6144M
+          emulator-boot-timeout: 1200
           script: bash .github/scripts/store-check.sh
 
       - name: Attach the report to the release
