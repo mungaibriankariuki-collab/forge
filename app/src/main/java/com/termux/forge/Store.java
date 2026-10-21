@@ -611,6 +611,8 @@ public final class Store {
         // Never replace a native command of the same name; wrappers carry a marker.
         "ub_wrap() { for c in \"$@\"; do f=\"$PREFIX/bin/$c\"; " +
         "if [ -e \"$f\" ] && ! grep -q forge-ubuntu-wrapper \"$f\" 2>/dev/null; then echo \"Keeping the native $c\"; continue; fi; " +
+        // Remove our old wrapper or a broken leftover link (e.g. from an earlier npm attempt) first.
+        "rm -f \"$f\"; " +
         "printf '#!%s/bin/sh\\n# forge-ubuntu-wrapper\\nexec forge-ubuntu %s \"$@\"\\n' \"$PREFIX\" \"$c\" > \"$f\"; chmod 755 \"$f\"; done; }\n";
 
     /** Script for the install tab: installs, checks that the command works, then waits for Enter. */
