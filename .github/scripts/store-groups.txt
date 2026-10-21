@@ -1,8 +1,8 @@
-claude-code openhands r-lang supabase chromium llm starter-vite pnpm perl elixir astronvim postgresql cloudflared delta heroku rclone ripgrep imagemagick newsboat fish fastfetch vim
-copilot-cli open-interpreter julia aws libreoffice shell-gpt starter-express typescript ruby crystal nvchad caddy minio tig flyctl jadx fd ffmpeg calcurse zsh tldr exercism
-goose whisper-cpp dotnet gcloud vscode-desktop mods starter-flask bun php nim lazyvim apache wordpress gitui wrangler apktool ncdu yt-dlp taskwarrior qalc modern-unix alpine
-cline sd-cpp flutter azure crush piper deno ipython zig wasmer nginx adminer lazygit railway adb zstd aria2 mpv bc btop debian
-kilo starter-fastapi doom-emacs fedora opencode llama-cpp starter-site poetry maven wasmtime micro mongodb tailscale firebase helm unrar lf sox ledger htop ubuntu
-amp starter-notebook code-server opensuse qwen-code ollama starter-whatsapp pipx gradle dart kakoune sqlite localtunnel netlify k9s 7zip ranger tesseract hledger zellij neofetch bastet
-aider jupyter n8n desktop gemini-cli aichat starter-discord uv kotlin ocaml emacs redis bore vercel kubectl restic yazi pdf-tools jrnl tmux cmatrix moon-buggy
-plandex scala uptime-kuma firefox codex fabric starter-telegram yarn lua haskell helix mariadb ngrok glab terraform syncthing fzf pandoc glow starship lolcat nethack
+claude-code openhands r-lang supabase chromium llm starter-vite pnpm perl elixir astronvim postgresql cloudflared glab terraform syncthing fzf pandoc glow starship lolcat nethack
+copilot-cli open-interpreter julia aws libreoffice shell-gpt starter-express typescript ruby crystal nvchad caddy minio delta heroku rclone ripgrep imagemagick newsboat fish fastfetch vim
+goose whisper-cpp dotnet gcloud vscode-desktop mods starter-flask bun php nim lazyvim apache wordpress tig flyctl jadx fd ffmpeg calcurse zsh tldr exercism
+cline sd-cpp flutter azure crush piper deno ipython zig wasmer nginx adminer gitui wrangler apktool ncdu yt-dlp taskwarrior qalc modern-unix alpine
+kilo starter-fastapi doom-emacs fedora opencode llama-cpp starter-site poetry maven wasmtime micro mongodb lazygit railway adb zstd aria2 mpv bc btop debian
+amp starter-notebook code-server opensuse qwen-code ollama starter-whatsapp pipx gradle dart kakoune sqlite tailscale firebase helm unrar lf sox ledger htop ubuntu
+aider jupyter n8n desktop gemini-cli aichat starter-discord uv kotlin ocaml emacs redis bore netlify k9s 7zip ranger tesseract hledger zellij neofetch bastet
+plandex scala uptime-kuma firefox codex fabric starter-telegram yarn lua haskell helix mariadb ngrok vercel kubectl restic yazi pdf-tools jrnl tmux cmatrix moon-buggy

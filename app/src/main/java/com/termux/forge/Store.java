@@ -77,7 +77,7 @@ public final class Store {
     private static Item pkg(String id, String name, String category, String description, String packages, String cmd) {
         Item item = new Item(id, name, category, description);
         item.check = cmd;
-        item.install = "pkg install -y " + packages + "\n";
+        item.install = "forge_upgrade\npkg install -y " + packages + "\n";
         item.remove = "pkg uninstall -y " + packages.split(" ")[packages.split(" ").length - 1];
         item.verify = cmd + " --version";
         item.open = cmd;
@@ -159,8 +159,12 @@ public final class Store {
         "ARCH=$(uname -m); DARCH=$(dpkg --print-architecture)\n" +
         "need_node() { if ! command -v node >/dev/null || [ \"$(node -v | cut -c2- | cut -d. -f1)\" -lt 22 ]; then " +
         "curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs; fi; }\n" +
-        "gh_get() { u=$(curl -fsSL \"https://api.github.com/repos/$1/releases/latest\" | grep -o '\"browser_download_url\": *\"[^\"]*\"' " +
-        "| cut -d'\"' -f4 | grep -E \"$2\" | head -1); [ -n \"$u\" ] || { echo \"No download for $1 matching $2\"; return 1; }; curl -fL \"$u\" -o \"$3\"; }\n" +
+        // Latest GitHub release asset matching $2, saved as $3. Uses the release web pages, not the
+        // API, which only allows 60 anonymous requests an hour.
+        "gh_get() { t=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \"https://github.com/$1/releases/latest\" | sed 's|.*/tag/||'); " +
+        "u=$(curl -fsSL \"https://github.com/$1/releases/expanded_assets/$t\" | grep -o 'href=\"[^\"]*/releases/download/[^\"]*\"' " +
+        "| cut -d'\"' -f2 | grep -E \"$2\" | head -1); [ -n \"$u\" ] || { echo \"No download for $1 matching $2\"; return 1; }; " +
+        "curl -fL \"https://github.com$u\" -o \"$3\"; }\n" +
         "charm_repo() { [ -f /etc/apt/sources.list.d/charm.list ] || { mkdir -p /etc/apt/keyrings; curl -fsSL https://repo.charm.sh/apt/gpg.key " +
         "| gpg --dearmor -o /etc/apt/keyrings/charm.gpg; echo 'deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *' " +
         "> /etc/apt/sources.list.d/charm.list; apt-get update; }; }\n";
@@ -389,7 +393,6 @@ public final class Store {
             "curl -fL \"https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-$DARCH.tgz\" | tar -xz -C /usr/local/bin\n", "ngrok")
             .note("Runs in the built-in Ubuntu. Needs a free ngrok account: ngrok config add-authtoken TOKEN").verify("ngrok version"));
         l.add(pkg("bore", "bore", SHARE, "Tiny tunnel to share a local port: bore local 8080 --to bore.pub.", "bore", "bore"));
-        l.add(npm("localtunnel", "localtunnel", SHARE, "Share a local port with a public URL: lt --port 8080.", "localtunnel", "lt"));
         l.add(ub("tailscale", "Tailscale", SHARE, "Private network between your devices (experimental: userspace mode).",
             "curl -fsSL https://tailscale.com/install.sh | sh\n", "tailscale", "tailscaled")
             .note("Runs in the built-in Ubuntu without a VPN device; only Tailscale's own SSH/HTTP features work.")
@@ -508,7 +511,8 @@ public final class Store {
         l.add(ub("lolcat", "lolcat", TERMINAL, "Rainbow text: fastfetch | lolcat.", "apt-get install -y lolcat\nln -sf /usr/games/lolcat /usr/local/bin/lolcat\n", "lolcat")
             .note("Runs in the built-in Ubuntu."));
         l.add(pkg("cmatrix", "cmatrix", TERMINAL, "The Matrix rain effect.", "cmatrix", "cmatrix").verify("cmatrix -V"));
-        l.add(pkg("neofetch", "neofetch", TERMINAL, "Classic system info display.", "neofetch", "neofetch").open("neofetch" + WAIT));
+        l.add(pkg("neofetch", "neofetch", TERMINAL, "Classic system info display.", "neofetch", "neofetch").open("neofetch" + WAIT)
+            .verify("test -x $PREFIX/bin/neofetch"));
 
         // Linux & desktop
         l.add(distro("ubuntu", "Ubuntu", "A full Ubuntu 24.04 system inside Forge (no root needed). Also used by the Ubuntu-based tools.", "ubuntu:24.04"));
@@ -599,7 +603,11 @@ public final class Store {
         // `proot-distro list` prints its table to stderr; --quiet prints bare names to stdout.
         "pd_has() { proot-distro list --quiet 2>/dev/null | grep -qx \"$1\" || " +
         "[ -d \"$PREFIX/var/lib/proot-distro/containers/$1\" ] || [ -d \"$PREFIX/var/lib/proot-distro/installed-rootfs/$1\" ]; }\n" +
-        "ub_setup() { pkg install -y proot-distro && { pd_has ubuntu || proot-distro install ubuntu:24.04 --name ubuntu; }; }\n" +
+        // Termux needs installed packages up to date before installing new ones (else apt exit 100).
+        // Done at most once a day.
+        "forge_upgrade() { m=\"$PREFIX/var/lib/forge-upgraded\"; [ \"$(cat \"$m\" 2>/dev/null)\" = \"$(date +%F)\" ] && return 0; " +
+        "pkg upgrade -y -o Dpkg::Options::=--force-confnew && date +%F > \"$m\"; }\n" +
+        "ub_setup() { forge_upgrade; pkg install -y proot-distro && { pd_has ubuntu || proot-distro install ubuntu:24.04 --name ubuntu; }; }\n" +
         // Never replace a native command of the same name; wrappers carry a marker.
         "ub_wrap() { for c in \"$@\"; do f=\"$PREFIX/bin/$c\"; " +
         "if [ -e \"$f\" ] && ! grep -q forge-ubuntu-wrapper \"$f\" 2>/dev/null; then echo \"Keeping the native $c\"; continue; fi; " +
@@ -609,7 +617,7 @@ public final class Store {
     public static String installScript(Item item) {
         return HELPERS +
             "step 'Installing " + escapeSingle(item.name) + "'\n" +
-            "( set -e\n" + item.install + ")\n" +
+            "( set -e\nforge_upgrade\n" + item.install + ")\n" +
             "ok=$?\n" +
             "v=$(timeout 180 sh -c '" + escapeSingle(item.verify) + "' 2>&1); vrc=$?; echo \"$v\" | head -3\n" +
             "if [ $ok = 0 ] && [ $vrc = 0 ] && ! echo \"$v\" | grep -qiE '" + FAILURE_WORDS + "'; then " +
@@ -644,7 +652,7 @@ public final class Store {
         s.append("# forge-store: install coding agents and tools. Usage: forge-store list | install ID... | remove ID... | test ID... | report\n");
         s.append(HELPERS);
         s.append("install_item() {\n  case \"$1\" in\n");
-        for (Item item : ITEMS) s.append("    ").append(item.id).append(") ( set -e\n").append(item.install).append(") ;;\n");
+        for (Item item : ITEMS) s.append("    ").append(item.id).append(") ( set -e\nforge_upgrade\n").append(item.install).append(") ;;\n");
         s.append("    *) echo \"Unknown item: $1\"; return 2 ;;\n  esac\n}\n");
         s.append("remove_item() {\n  case \"$1\" in\n");
         for (Item item : ITEMS) s.append("    ").append(item.id).append(") ").append(item.remove.replace("\n", "; ")).append(" ;;\n");
@@ -677,6 +685,8 @@ public final class Store {
         s.append("      echo \"$line\" | tee -a \"$report\"\n");
         s.append("      [ $r = FAIL ] && tail -4 \"$TMPDIR/forge-store-$i.log\" | cut -c1-90 | sed 's/^/    /' | tee -a \"$report\"\n");
         s.append("    done\n    step 'Summary'; forge-store report\n");
+        // Copy logs to shared storage so an automated test can collect them.
+        s.append("    mkdir -p /sdcard/forge-test 2>/dev/null && cp \"$report\" \"$TMPDIR\"/forge-store-*.log /sdcard/forge-test/ 2>/dev/null\n");
         // Tell an automated test that the run is over: the tab title shows in Forge's tabs bar.
         s.append("    printf '\\033]0;store-done\\007' ;;\n");
         s.append("  report) f=\"$HOME/forge-store-test.txt\"; grep -E '^FAIL' \"$f\" | cut -c1-70; ");

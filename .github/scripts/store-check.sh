@@ -28,4 +28,6 @@ sleep 3
 adb shell input keyevent 111   # Hide the keyboard so more lines fit.
 sleep 2
 shot 2-report
+# Collect the per-item install logs the test copied to shared storage.
+adb pull /sdcard/forge-test "shots/logs-g${GROUP:-1}" >/dev/null 2>&1 && tar -czf "shots/store-g${GROUP:-1}-logs.tar.gz" -C shots "logs-g${GROUP:-1}"
 exit 0
