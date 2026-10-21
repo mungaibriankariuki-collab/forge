@@ -11,8 +11,16 @@ type_line() { adb shell input text "$(echo "$1" | sed 's/ /%s/g')"; adb shell in
 
 adb shell am start -n com.termux/.app.TermuxActivity
 sleep 90
-adb shell input keyevent 4   # Close the welcome setup screen.
-sleep 3
+# Close the welcome setup screen only if it is showing (an extra Back would leave Forge),
+# then make sure the terminal is in front before typing.
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+adb pull /sdcard/ui.xml shots/ui.xml >/dev/null 2>&1
+grep -q "Welcome to Forge" shots/ui.xml 2>/dev/null && adb shell input keyevent 4
+sleep 2
+adb shell am start -n com.termux/.app.TermuxActivity
+sleep 4
+adb shell input tap 160 300   # Focus the terminal.
+sleep 1
 type_line "forge-store test $IDS"
 # Wait (up to ~2 h) until the test sets the tab title to "store-done", which shows in the tabs bar.
 for i in $(seq 1 260); do

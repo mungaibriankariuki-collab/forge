@@ -73,11 +73,26 @@ public final class Store {
 
     // ---- Builders ----
 
+    /**
+     * `pkg install` for a package list. Extra repositories (tur-repo, x11-repo) are installed first
+     * and the package lists refreshed, otherwise their packages cannot be found in the same step.
+     */
+    private static String pkgInstall(String packages) {
+        StringBuilder repos = new StringBuilder();
+        StringBuilder rest = new StringBuilder();
+        for (String p : packages.split(" ")) {
+            if (p.endsWith("-repo")) repos.append(' ').append(p);
+            else if (!p.isEmpty()) rest.append(' ').append(p);
+        }
+        String out = repos.length() > 0 ? "pkg install -y" + repos + "\napt update\n" : "";
+        return out + (rest.length() > 0 ? "pkg install -y" + rest + "\n" : "");
+    }
+
     /** A tool from Termux's own packages. {@code cmd} is the command it provides. */
     private static Item pkg(String id, String name, String category, String description, String packages, String cmd) {
         Item item = new Item(id, name, category, description);
         item.check = cmd;
-        item.install = "forge_upgrade\npkg install -y " + packages + "\n";
+        item.install = "forge_upgrade\n" + pkgInstall(packages);
         item.remove = "pkg uninstall -y " + packages.split(" ")[packages.split(" ").length - 1];
         item.verify = cmd + " --version";
         item.open = cmd;
@@ -201,7 +216,8 @@ public final class Store {
         l.add(ub("kilo", "Kilo Code CLI", AI, "Kilo Code's open-source coding agent for the terminal.", "need_node\nnpm install -g @kilocode/cli\n", "kilocode")
             .note("Runs in the built-in Ubuntu."));
         l.add(ub("amp", "Amp", AI, "Sourcegraph's coding agent, strong on big codebases.", "need_node\nnpm install -g @sourcegraph/amp\n", "amp")
-            .note("Runs in the built-in Ubuntu. Needs an Amp account."));
+            .note("Runs in the built-in Ubuntu. Needs an Amp account.")
+            .verify("forge-ubuntu sh -c 'command -v amp'"));
         l.add(ub("aider", "Aider", AI, "AI pair programming in the terminal; works great with git.",
             "pipx install aider-chat\n", "aider").note("Runs in the built-in Ubuntu. Bring your own API key."));
         l.add(ub("openhands", "OpenHands CLI", AI, "Open-source autonomous software-engineer agent.",
@@ -212,11 +228,12 @@ public final class Store {
         l.add(ub("mods", "Mods", AI, "Pipe anything into AI: cat error.log | mods \"why did this fail\".",
             "charm_repo\napt-get install -y mods\n", "mods").note("Runs in the built-in Ubuntu."));
         l.add(ub("shell-gpt", "ShellGPT", AI, "Ask AI for a shell command or answer: sgpt \"find big files\".",
-            "pipx install shell-gpt\n", "sgpt").note("Runs in the built-in Ubuntu. Uses an OpenAI-compatible key."));
+            "pipx install shell-gpt\n", "sgpt").note("Runs in the built-in Ubuntu. Uses an OpenAI-compatible key.")
+            .verify("forge-ubuntu sh -c 'command -v sgpt'"));
         l.add(ub("llm", "llm", AI, "One command for every AI model, with plugins (Simon Willison).", "pipx install llm\n", "llm")
             .note("Runs in the built-in Ubuntu."));
         l.add(ub("fabric", "Fabric", AI, "Hundreds of ready-made AI prompts: summarize, explain code, extract wisdom…",
-            "gh_get danielmiessler/fabric \"fabric-linux-$( [ $DARCH = arm64 ] && echo arm64 || echo amd64 )$\" /usr/local/bin/fabric\nchmod 755 /usr/local/bin/fabric\n",
+            "curl -fL \"https://github.com/danielmiessler/fabric/releases/latest/download/fabric-linux-$DARCH\" -o /usr/local/bin/fabric\nchmod 755 /usr/local/bin/fabric\n",
             "fabric").note("Runs in the built-in Ubuntu. Run `fabric --setup` first."));
         l.add(pkg("aichat", "AIChat", AI, "All-in-one chat, roles and RAG for every AI provider.", "aichat", "aichat"));
 
@@ -280,7 +297,7 @@ public final class Store {
         l.add(starter("starter-notebook", "Python data notebook", "Jupyter-style data work: pandas + matplotlib, with an example script.",
             "data-notebook",
             "cat > analysis.py <<'EOF'\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\n\ndf = pd.DataFrame({\"day\": range(1, 8), \"sales\": [5, 8, 6, 10, 12, 9, 14]})\nprint(df.describe())\ndf.plot(x=\"day\", y=\"sales\", title=\"Sales\")\nplt.savefig(\"chart.png\")\nprint(\"Saved chart.png\")\nEOF\n",
-            "pkg install -y tur-repo\npkg install -y python python-pandas matplotlib\n"));
+            pkgInstall("tur-repo python python-pandas matplotlib")));
 
         // Languages
         l.add(pkg("deno", "Deno", LANG, "Modern JavaScript/TypeScript runtime.", "deno", "deno"));
@@ -291,7 +308,8 @@ public final class Store {
         l.add(pkg("uv", "uv", LANG, "Extremely fast Python package and project manager.", "uv", "uv"));
         l.add(pip("pipx", "pipx", LANG, "Install Python apps in their own environments.", "pipx", "pipx"));
         l.add(ub("poetry", "Poetry", LANG, "Python dependency and packaging tool.", "pipx install poetry\n", "poetry").note("Runs in the built-in Ubuntu."));
-        l.add(pip("ipython", "IPython", LANG, "A much nicer interactive Python shell.", "ipython", "ipython"));
+        l.add(ub("ipython", "IPython", LANG, "A much nicer interactive Python shell.", "pipx install ipython\n", "ipython")
+            .note("Runs in the built-in Ubuntu."));
         l.add(ub("jupyter", "Jupyter Lab", LANG, "Notebooks in your browser at http://localhost:8888.",
             "pipx install jupyterlab --include-deps\n", "jupyter-lab", "jupyter")
             .note("Runs in the built-in Ubuntu. Open starts it and your browser.")
@@ -370,12 +388,8 @@ public final class Store {
             .check("$HOME/wordpress/wp-config-sample.php").verify("test -f $HOME/wordpress/index.php")
             .note("First open: the setup page asks for database \"wordpress\", user = your Termux user name, empty password, host 127.0.0.1.")
             .open("mariadbd-safe > \"$TMPDIR/mariadb.log\" 2>&1 &\nsleep 6\nmariadb -u \"$(whoami)\" -e 'CREATE DATABASE IF NOT EXISTS wordpress'\n(sleep 2; termux-open-url http://localhost:8082) &\ncd ~/wordpress && php -S 127.0.0.1:8082"));
-        last(l).install = "pkg install -y php php-mysql mariadb\n[ -d \"$HOME/wordpress\" ] || { curl -fL https://wordpress.org/latest.tar.gz | tar -xz -C \"$HOME\"; }\n";
+        last(l).install = "pkg install -y php mariadb\n[ -d \"$HOME/wordpress\" ] || { curl -fL https://wordpress.org/latest.tar.gz | tar -xz -C \"$HOME\"; }\n";
         last(l).remove = "rm -rf \"$HOME/wordpress\"";
-        l.add(ub("minio", "MinIO", WEB, "Your own S3-compatible storage server.",
-            "curl -fL \"https://dl.min.io/server/minio/release/linux-$DARCH/minio\" -o /usr/local/bin/minio\nchmod 755 /usr/local/bin/minio\n", "minio")
-            .note("Runs in the built-in Ubuntu. Console on http://localhost:9001 (minioadmin / minioadmin).")
-            .open("mkdir -p ~/minio-data\n(sleep 5; termux-open-url http://localhost:9001) &\nminio server ~/minio-data --console-address :9001"));
         l.add(ub("n8n", "n8n", WEB, "Workflow automation (like Zapier) on http://localhost:5678.", "need_node\nnpm install -g n8n\n", "n8n")
             .note("Runs in the built-in Ubuntu. Big install.")
             .open("(sleep 15; termux-open-url http://localhost:5678) &\nn8n start"));
@@ -478,7 +492,8 @@ public final class Store {
         l.add(pkg("calcurse", "calcurse", PRODUCTIVITY, "Calendar and scheduling.", "calcurse", "calcurse"));
         l.add(pkg("newsboat", "newsboat", PRODUCTIVITY, "RSS / news reader.", "newsboat", "newsboat"));
         l.add(pkg("glow", "glow", PRODUCTIVITY, "Read Markdown beautifully in the terminal.", "glow", "glow").open("glow ~"));
-        l.add(pip("jrnl", "jrnl", PRODUCTIVITY, "A simple journal: jrnl today was great.", "jrnl", "jrnl"));
+        l.add(ub("jrnl", "jrnl", PRODUCTIVITY, "A simple journal: jrnl today was great.", "pipx install jrnl\n", "jrnl")
+            .note("Runs in the built-in Ubuntu."));
         l.add(pkg("hledger", "hledger", PRODUCTIVITY, "Track money with plain-text accounting.", "hledger", "hledger").open(help("hledger")));
         l.add(pkg("ledger", "ledger", PRODUCTIVITY, "Plain-text accounting (the original).", "ledger", "ledger").open(help("ledger")));
         l.add(pkg("bc", "bc", PRODUCTIVITY, "Calculator: echo '2^10' | bc", "bc", "bc").open("bc -l"));
@@ -522,7 +537,7 @@ public final class Store {
             .check("startxfce4").verify("test -x $PREFIX/bin/startxfce4")
             .note("Install a VNC viewer app (for example AVNC), then connect to localhost:5901. The first Open asks you to set a VNC password.")
             .open("mkdir -p ~/.vnc\nprintf '#!/data/data/com.termux/files/usr/bin/sh\\nxfce4-session &\\n' > ~/.vnc/xstartup\nchmod +x ~/.vnc/xstartup\nvncserver -kill :1 >/dev/null 2>&1\nvncserver :1 -geometry 1280x720 -localhost yes\necho 'Desktop running. Connect your VNC app to localhost:5901.'\nread -r -p 'Press Enter to stop the desktop. ' _\nvncserver -kill :1"));
-        last(l).install = "pkg install -y x11-repo\npkg install -y xfce4 xfce4-terminal tigervnc\n";
+        last(l).install = pkgInstall("x11-repo xfce4 xfce4-terminal tigervnc");
         last(l).remove = "pkg uninstall -y xfce4 xfce4-terminal tigervnc";
         l.add(x11("firefox", "Firefox", "The Firefox browser, for the Linux desktop.", "firefox", "firefox"));
         l.add(x11("chromium", "Chromium", "The Chromium browser, for the Linux desktop.", "tur-repo chromium", "chromium-browser"));
@@ -570,7 +585,7 @@ public final class Store {
     private static Item x11(String id, String name, String description, String packages, String cmd) {
         Item item = new Item(id, name, LINUX, description);
         item.check = cmd;
-        item.install = "pkg install -y x11-repo\npkg install -y " + packages + "\n";
+        item.install = pkgInstall("x11-repo " + packages);
         item.remove = "pkg uninstall -y " + packages.split(" ")[packages.split(" ").length - 1];
         item.verify = "test -x $PREFIX/bin/" + cmd;
         item.note = "Opens inside the Linux desktop item: install that too, then start it from the desktop menu.";

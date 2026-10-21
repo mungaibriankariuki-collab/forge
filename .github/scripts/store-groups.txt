@@ -1,16 +1,16 @@
-claude-code julia libreoffice starter-vite perl astronvim cloudflared terraform fzf glow lolcat
-copilot-cli dotnet vscode-desktop starter-express ruby nvchad minio heroku ripgrep newsboat fastfetch
-goose flutter starter-flask php lazyvim wordpress flyctl fd calcurse tldr
-cline doom-emacs piper ipython wasmer adminer wrangler ncdu taskwarrior modern-unix
-kilo code-server llama-cpp poetry wasmtime mongodb railway zstd mpv btop
-amp n8n ollama pipx dart sqlite firebase unrar sox htop
-aider uptime-kuma aichat uv ocaml redis netlify 7zip tesseract zellij bastet
-openhands supabase fabric yarn haskell mariadb vercel restic pdf-tools tmux moon-buggy
-open-interpreter aws llm pnpm elixir postgresql glab syncthing pandoc starship nethack
-whisper-cpp gcloud shell-gpt typescript crystal caddy delta rclone imagemagick fish vim
-sd-cpp azure mods bun nim apache tig jadx ffmpeg zsh exercism
-starter-fastapi fedora crush deno zig nginx gitui apktool yt-dlp qalc alpine
-starter-notebook opensuse opencode starter-site maven micro lazygit adb aria2 bc debian
-jupyter desktop qwen-code starter-whatsapp gradle kakoune tailscale helm lf ledger ubuntu
-scala firefox gemini-cli starter-discord kotlin emacs bore k9s ranger hledger neofetch
-r-lang chromium codex starter-telegram lua helix ngrok kubectl yazi jrnl cmatrix
+claude-code julia libreoffice starter-vite perl astronvim ngrok kubectl yazi jrnl cmatrix
+copilot-cli dotnet vscode-desktop starter-express ruby nvchad cloudflared terraform fzf glow lolcat
+goose flutter starter-flask php lazyvim wordpress heroku ripgrep newsboat fastfetch
+cline doom-emacs piper ipython wasmer adminer flyctl fd calcurse tldr
+kilo code-server llama-cpp poetry wasmtime mongodb wrangler ncdu taskwarrior modern-unix
+amp n8n ollama pipx dart sqlite railway zstd mpv btop
+aider uptime-kuma aichat uv ocaml redis firebase unrar sox htop
+openhands supabase fabric yarn haskell mariadb netlify 7zip tesseract zellij bastet
+open-interpreter aws llm pnpm elixir postgresql vercel restic pdf-tools tmux moon-buggy
+whisper-cpp gcloud shell-gpt typescript crystal caddy glab syncthing pandoc starship nethack
+sd-cpp azure mods bun nim apache delta rclone imagemagick fish vim
+starter-fastapi fedora crush deno zig nginx tig jadx ffmpeg zsh exercism
+starter-notebook opensuse opencode starter-site maven micro gitui apktool yt-dlp qalc alpine
+jupyter desktop qwen-code starter-whatsapp gradle kakoune lazygit adb aria2 bc debian
+scala firefox gemini-cli starter-discord kotlin emacs tailscale helm lf ledger ubuntu
+r-lang chromium codex starter-telegram lua helix bore k9s ranger hledger neofetch
