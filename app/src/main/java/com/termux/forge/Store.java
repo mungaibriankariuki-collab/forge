@@ -224,7 +224,8 @@ public final class Store {
             "curl -LsSf https://astral.sh/uv/install.sh | sh\nuv tool install openhands --python 3.12\n", "openhands")
             .note("Runs in the built-in Ubuntu. Big install. Bring your own API key."));
         l.add(ub("open-interpreter", "Open Interpreter", AI, "Lets an AI run code on your phone to get tasks done.",
-            "pipx install open-interpreter\n", "interpreter").note("Runs in the built-in Ubuntu. Bring your own API key."));
+            // Open Interpreter still imports pkg_resources, which Python 3.12 venvs no longer include.
+            "pipx install open-interpreter\npipx inject open-interpreter setuptools\n", "interpreter").note("Runs in the built-in Ubuntu. Bring your own API key."));
         l.add(ub("mods", "Mods", AI, "Pipe anything into AI: cat error.log | mods \"why did this fail\".",
             "charm_repo\napt-get install -y mods\n", "mods").note("Runs in the built-in Ubuntu."));
         l.add(ub("shell-gpt", "ShellGPT", AI, "Ask AI for a shell command or answer: sgpt \"find big files\".",
@@ -233,7 +234,7 @@ public final class Store {
         l.add(ub("llm", "llm", AI, "One command for every AI model, with plugins (Simon Willison).", "pipx install llm\n", "llm")
             .note("Runs in the built-in Ubuntu."));
         l.add(ub("fabric", "Fabric", AI, "Hundreds of ready-made AI prompts: summarize, explain code, extract wisdom…",
-            "curl -fL \"https://github.com/danielmiessler/fabric/releases/latest/download/fabric-linux-$DARCH\" -o /usr/local/bin/fabric\nchmod 755 /usr/local/bin/fabric\n",
+            "gh_get danielmiessler/fabric \"fabric_Linux_$( [ $DARCH = arm64 ] && echo arm64 || echo x86_64 ).tar.gz$\" /tmp/fabric.tgz\ntar -xzf /tmp/fabric.tgz -C /usr/local/bin fabric\nchmod 755 /usr/local/bin/fabric\n",
             "fabric").note("Runs in the built-in Ubuntu. Run `fabric --setup` first."));
         l.add(pkg("aichat", "AIChat", AI, "All-in-one chat, roles and RAG for every AI provider.", "aichat", "aichat"));
 
@@ -318,7 +319,7 @@ public final class Store {
         l.add(pkg("ruby", "Ruby", LANG, "Ruby with gem and bundler.", "ruby", "ruby"));
         l.add(pkg("perl", "Perl", LANG, "The Perl language.", "perl", "perl"));
         l.add(pkg("lua", "Lua + LuaRocks", LANG, "Lua 5.4 and its package manager.", "lua54 luarocks", "lua5.4").verify("lua5.4 -v"));
-        l.add(pkg("kotlin", "Kotlin", LANG, "Kotlin compiler (needs Java).", "openjdk-21 kotlin", "kotlinc").verify("kotlinc -version"));
+        l.add(pkg("kotlin", "Kotlin", LANG, "Kotlin compiler (needs Java).", "openjdk-21 kotlin", "kotlinc").verify("test -x $PREFIX/bin/kotlinc"));
         l.add(pkg("gradle", "Gradle", LANG, "Java/Kotlin build tool.", "openjdk-21 gradle", "gradle"));
         l.add(pkg("maven", "Maven", LANG, "Java build tool.", "openjdk-21 maven", "mvn"));
         l.add(ub("scala", "Scala", LANG, "Scala via Coursier (scala, scala-cli).",
@@ -394,7 +395,7 @@ public final class Store {
             .note("Runs in the built-in Ubuntu. Big install.")
             .open("(sleep 15; termux-open-url http://localhost:5678) &\nn8n start"));
         l.add(ub("uptime-kuma", "Uptime Kuma", WEB, "Monitor your websites with a nice dashboard on http://localhost:3001.",
-            "need_node\n[ -d /opt/uptime-kuma ] || git clone --depth 1 https://github.com/louislam/uptime-kuma.git /opt/uptime-kuma\ncd /opt/uptime-kuma && npm run setup\nprintf '#!/bin/sh\\ncd /opt/uptime-kuma && exec node server/server.js \"$@\"\\n' > /usr/local/bin/uptime-kuma\nchmod 755 /usr/local/bin/uptime-kuma\n",
+            "need_node\n[ -d /opt/uptime-kuma ] || git clone https://github.com/louislam/uptime-kuma.git /opt/uptime-kuma\ncd /opt/uptime-kuma && npm run setup\nprintf '#!/bin/sh\\ncd /opt/uptime-kuma && exec node server/server.js \"$@\"\\n' > /usr/local/bin/uptime-kuma\nchmod 755 /usr/local/bin/uptime-kuma\n",
             "uptime-kuma").verify("test -f $PREFIX/bin/uptime-kuma").note("Runs in the built-in Ubuntu.")
             .open("(sleep 10; termux-open-url http://localhost:3001) &\nuptime-kuma"));
 
@@ -417,7 +418,10 @@ public final class Store {
         l.add(pkg("delta", "delta", DEPLOY, "Beautiful git diffs (set as git's pager).", "git git-delta", "delta")
             .open("git config --global core.pager delta\ngit config --global interactive.diffFilter 'delta --color-only'\necho 'delta is now your git pager.'" + WAIT));
         l.add(ub("glab", "GitLab CLI", DEPLOY, "Work with GitLab from the terminal.",
-            "gh_get gitlab-org/cli \"glab_.*_linux_$DARCH.deb$\" /tmp/glab.deb || gh_get profclems/glab \"linux_$DARCH.deb$\" /tmp/glab.deb\napt-get install -y /tmp/glab.deb\n", "glab")
+            // glab is released on GitLab (not GitHub): latest version from the GitLab API, .deb from its package registry.
+            "v=$(curl -fsS 'https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases?per_page=1' | grep -o '\"tag_name\":\"v[^\"]*\"' | head -1 | cut -d'\"' -f4 | cut -c2-)\n" +
+            "curl -fL \"https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/packages/generic/glab/$v/glab_${v}_linux_$DARCH.deb\" -o /tmp/glab.deb\n" +
+            "apt-get install -y /tmp/glab.deb\n", "glab")
             .note("Runs in the built-in Ubuntu."));
         l.add(npm("vercel", "Vercel CLI", DEPLOY, "Deploy websites to Vercel.", "vercel", "vercel"));
         l.add(npm("netlify", "Netlify CLI", DEPLOY, "Deploy websites to Netlify.", "netlify-cli", "netlify"));
@@ -453,7 +457,7 @@ public final class Store {
             .note("For this phone: Settings > Developer options > Wireless debugging > Pair, then adb pair / adb connect.")
             .open(help("adb")));
         l.add(pkg("apktool", "apktool", ANDROID, "Unpack and rebuild Android apps (your own or open-source ones).", "apktool", "apktool").verify("apktool --version"));
-        l.add(pkg("jadx", "jadx", ANDROID, "Turn APKs back into readable Java source.", "jadx", "jadx"));
+        l.add(pkg("jadx", "jadx", ANDROID, "Turn APKs back into readable Java source.", "jadx", "jadx").verify("test -x $PREFIX/bin/jadx"));
 
         // Files & sync
         l.add(pkg("rclone", "rclone", FILES, "Sync with Google Drive, OneDrive, Dropbox and 70+ clouds.", "rclone", "rclone").open("rclone config"));
